@@ -23,5 +23,6 @@
                     },
     "runStatus":  "RUNNING",
     "repoUrl":  "https://github.com/rmanish611/SoftwareManagement.git",
-    "schemaVersion":  2
+    "schemaVersion":  2,
+    "requirementsSha256":  "45DA6699E50E9A87BA04760247B32D65005ED0D493E356447A57490152DF7B7E"
 }

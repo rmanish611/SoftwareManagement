@@ -1,0 +1,28 @@
+{
+    "blueprintProgress":  [
+                              "00-assumptions.md",
+                              "01-research.md"
+                          ],
+    "blueprintPass":  1,
+    "stage":  "AWAITING_APPROVAL",
+    "rootPath":  "G:/software-management",
+    "project":  "Software Management",
+    "defaultBranch":  "main",
+    "brief":  "A public marketing and sales website for the software products I build. Visitors browse a catalog of my products, open a product page (screenshots, feature list, pricing, live-demo link, download or GitHub link) and buy or request a licence; I manage the catalog, pricing, orders and customer enquiries from an admin panel. It is a product showcase plus storefront - NOT an IT software-asset or licence-management tool.",
+    "environment":  {
+                        "sqlToolPath":  "SqlClient",
+                        "availableMbAtPhaseStart":  1786,
+                        "dotnetSdk":  "10.0.400",
+                        "node":  "v24.13.0",
+                        "aspNetRuntime":  "Microsoft.AspNetCore.App 8.0.30, 9.0.19, 10.0.11",
+                        "angularCli":  "21.1.1",
+                        "git":  "git version 2.52.0.windows.1",
+                        "dbInstance":  "(localdb)\\MSSQLLocalDB",
+                        "efToolVersion":  "10.0.11",
+                        "npm":  "11.6.2"
+                    },
+    "runStatus":  "RUNNING",
+    "repoUrl":  "https://github.com/rmanish611/SoftwareManagement.git",
+    "schemaVersion":  2,
+    "requirementsSha256":  "45DA6699E50E9A87BA04760247B32D65005ED0D493E356447A57490152DF7B7E"
+}

@@ -1,0 +1,7 @@
+{
+  "run-until-complete": {
+    "Stop": [
+      { "type": "command", "command": "node scripts/stop-guard.js", "timeout": 15 }
+    ]
+  }
+}

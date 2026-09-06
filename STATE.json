@@ -4,7 +4,7 @@
                               "01-research.md"
                           ],
     "blueprintPass":  1,
-    "stage":  "STAGE_A_RESEARCH",
+    "stage":  "AWAITING_APPROVAL",
     "rootPath":  "G:/software-management",
     "project":  "Software Management",
     "defaultBranch":  "main",

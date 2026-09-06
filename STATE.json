@@ -1,6 +1,7 @@
 {
     "blueprintProgress":  [
-
+                              "00-assumptions.md",
+                              "01-research.md"
                           ],
     "blueprintPass":  1,
     "stage":  "STAGE_A_RESEARCH",

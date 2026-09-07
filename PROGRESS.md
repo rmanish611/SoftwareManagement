@@ -16,3 +16,11 @@
 ### Research mode
 - RESEARCH_MODE: LIVE - three retrievals across hubspot.com, odoo.com, w3.org, evidence in `_evidence/phase-00/research-access.md`.
 - Research is run as parallel source-class batches; every ledger row is re-fetched by an independent verifier before it enters `01-research.md`. Raw batch output and verdicts live in `docs/blueprint/_research/`.
+
+### Pass 2 complete (2026-09-08)
+- Blueprint rewritten for the corporate-website brief. Pass-1 snapshot kept in `docs/blueprint/_pass1/`.
+- Generated changelog against pass 1 (412d4e0): `PASS2_ADDED_LINES=2728 NEW_REQ=138 NEW_BR=72 NEW_EX=73` against protocol thresholds 15 / 8 / 5.
+- Metrics gate: `BLUEPRINT_METRICS=PASS` (assumptions 30/20, sources 21/14, capabilities 65/60, actors 11/8, rules 72/40, exceptions 73/40, entities 60/25, requirements 138/120, NFRs 61/14, authz 72/30, ADRs 23/16, phases 14/10, Must 71% inside the 55-75% band).
+- Consistency reconciliation: `GATE_H PASS failures=0 warnings=38`. The warnings are requirements whose acceptance criteria state a boundary rather than an HTTP status; every phase block still carries a [REJECT] criterion with a status code.
+- Stage set to AWAITING_APPROVAL. `requirementsSha256` is deliberately empty: it is written only in the turn the approval line arrives (Rule S7).
+- Licence findings that need an owner decision: FluentAssertions 8 is paid for commercial use (replaced with AwesomeAssertions), SixLabors.ImageSharp has revenue-threshold terms (replaced with SkiaSharp), Hangfire Core is free under LGPL but is deferred in favour of our own outbox.

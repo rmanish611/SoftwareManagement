@@ -1,196 +1,462 @@
 # 09 Phase Plan
 
-## P01: Repo & Guardrails
-Goal (1 line): Establish repository structure, CI skeleton, and protocol enforcement files.
-REQ IDs delivered: None
-NFR IDs addressed: NFR-MAINT-01, NFR-MAINT-02, NFR-ACC-01
-Depends on: Preflight
-Deliverables: README, ci.yml, EXCEPTIONS.md, BACKLOG.md, PROGRESS-INDEX.md
-RAM note: Minimal footprint.
-UI: none — infrastructure
-dodApplicable: D1
-acceptanceCriteria: none
+Fourteen phases. Every phase from P02 onward ends in something that runs, and every phase is closed only by a `phase-NN-closed` tag on the remote after D1-D15 are green. `dodApplicable` is frozen here at approval and mirrored into `STATE.json`; it is never narrowed at gate time.
+
+Acceptance criteria are copied from the Given/When/Then of the REQ rows the phase delivers. Criteria such as "the build succeeds", "tests pass" or "/health returns 200" are banned here because D1-D15 already cover them.
+
+## P01: Repo and guardrails
+Goal (1 line): Verify the repository skeleton created in preflight and add the files every later phase depends on.
+REQ IDs delivered: none (infrastructure phase)
+NFR IDs addressed: NFR-MAINT-03, NFR-MAINT-04, NFR-DEP-03, NFR-BACKUP-03
+Depends on: preflight
+Deliverables: `README.md`, real `.github/workflows/ci.yml`, `docs/EXCEPTIONS.md`, `docs/BACKLOG.md`, `PROGRESS-INDEX.md`, `docs/SECURITY.md` and `docs/PRIVACY.md` skeletons, `.editorconfig`, `CODEOWNERS`
+RAM note: negligible; no build runs
+UI: none - repository infrastructure only
+dodApplicable: D11, D12, D13, D14
+acceptanceCriteria: this phase has no REQ rows, so its exit criteria are the file and push checks in the table below rather than business assertions.
 minTests: 0
 minFrontendTests: 0
 phaseRoutes: []
 phaseSelectors: []
 dbObjects: []
-smoke: { }
-Exit criteria table: 
+smoke: { protectedPath: "", listPath: "", createPath: "", probeCreateBody: "", probeTable: "", probeColumn: "", deepRoute: "", seedEmail: "", lowPrivEmail: "" }
+Exit criteria table:
 | # | Command | Expected result | Proves REQ/NFR |
 |---|---|---|---|
-| 1 | `git ls-files` | Contains .github/workflows/ci.yml | Infrastructure setup |
-Rollback plan if this phase fails: Reset hard to commit before P01.
+| 1 | `git check-ignore -v node_modules bin obj _publish` | every path reported as ignored | NFR-SEC-07 |
+| 2 | `git ls-files` | contains `.github/workflows/ci.yml`, `docs/EXCEPTIONS.md`, `docs/BACKLOG.md`, `PROGRESS-INDEX.md` | NFR-MAINT-04 |
+| 3 | `git ls-remote origin refs/heads/main` | matches local HEAD | NFR-DEP-03 |
+| 4 | anti-stub scan | `STUB_HITS=0 EMPTY_CATCH=0` | NFR-MAINT-03 |
+Rollback plan if this phase fails: revert the phase commit; preflight state is untouched because nothing outside `docs/` and `.github/` was written.
 
-## P02: Walking Skeleton
-Goal (1 line): Setup ASP.NET API, Angular Workspace, and EF Core DbContext with /health and shell component.
-REQ IDs delivered: None
-NFR IDs addressed: NFR-PERF-01
+## P02: Walking skeleton
+Goal (1 line): Create the full solution, the Angular workspace and the frozen guardrails, with a running published API and a rendering Angular shell.
+REQ IDs delivered: none (skeleton phase)
+NFR IDs addressed: NFR-PERF-03, NFR-MAINT-02, NFR-MAINT-03, NFR-MAINT-05, NFR-OBS-01, NFR-OBS-03, NFR-SEC-03, NFR-AVAIL-04, NFR-DEP-02
 Depends on: P01
-Deliverables: .NET Solution, Angular Workspace, DbContext
-RAM note: Sequential build required.
-UI: yes
-dodApplicable: D1, D2, D3, D5, D6, D7, D15
-acceptanceCriteria: none
-minTests: 2
+Deliverables: `backend/src/{Domain,Application,Infrastructure,Api}`, `backend/tests/{Domain.Tests,Application.Tests,Api.IntegrationTests,Architecture.Tests}`, `frontend/` Angular 22 workspace with SSR, `Directory.Build.props` with `TreatWarningsAsErrors`, frozen `angular.json` budgets (500 KB initial, 250 KB lazy), `tools/static-server.mjs`, Serilog, ProblemDetails handler, health endpoints, design tokens, the empty `AppDbContext` and its first migration
+RAM note: the heaviest phase. Close the editor and the browser. Never build backend and frontend at the same time.
+UI: yes - the application shell renders and is proven by a component test
+dodApplicable: D1, D2, D3, D5, D6, D9, D10, D11, D12, D13, D14, D15
+acceptanceCriteria: this phase delivers no REQ rows; its criteria are the infrastructure assertions in the exit table, which is why D4, D7 and D8 are not yet applicable.
+minTests: 6
 minFrontendTests: 2
 phaseRoutes: ["/"]
-phaseSelectors: ["app-root"]
-dbObjects: ["__EFMigrationsHistory"]
-smoke: { protectedPath: "/api/protected", listPath: "/", createPath: "", probeCreateBody: "", probeTable: "", probeColumn: "", deepRoute: "", seedEmail: "admin@example.com", lowPrivEmail: "user@example.com" }
+phaseSelectors: ["app-root", "app-shell"]
+dbObjects: []
+smoke: { protectedPath: "/api/v1/ping/secure", listPath: "", createPath: "", probeCreateBody: "", probeTable: "", probeColumn: "", deepRoute: "/", seedEmail: "", lowPrivEmail: "" }
 Exit criteria table:
 | # | Command | Expected result | Proves REQ/NFR |
 |---|---|---|---|
-| 1 | `curl -s http://localhost:5000/api/health` | 200 OK | API is running |
-| 2 | `curl -s -I http://localhost:5000/api/protected` | 401 Unauthorized | NFR-AUTH-01 Default Deny |
-Rollback plan if this phase fails: `git clean -fdx` and hard reset.
+| 1 | `dotnet build -c Release -warnaserror -m:1` | `0 Warning(s)` `0 Error(s)` | NFR-MAINT-03 |
+| 2 | run the published DLL, `curl.exe http://localhost:5199/health/ready` | 200 with a JSON body naming each check | NFR-AVAIL-04 |
+| 3 | `curl.exe -i http://localhost:5199/api/v1/ping/secure` | 401 anonymously | NFR-AUTHZ-01 |
+| 4 | `curl.exe -i http://localhost:5199/api/v1/diagnostics/throw` | `application/problem+json` with `traceId` and no `.cs:line` in the body | NFR-OBS-03 |
+| 5 | `ng build --configuration production` | exit 0 with the budget block unchanged | NFR-PERF-03 |
+| 6 | static server, `curl.exe http://localhost:4300/` | 200 containing `<app-root` | NFR-SEO-01 |
+| 7 | `curl.exe -i http://localhost:4300/assets/missing-<nonce>.js` | 404, proving the SPA fallback is a fallback | D10 |
+Rollback plan if this phase fails: delete `backend/` and `frontend/`, drop the database, reset to the P01 tag, and re-scaffold; nothing outside the repository is touched.
 
-## P03: Master Data & Catalog (Backend)
-Goal (1 line): Implement EF Core entities and API endpoints for Products and Variants.
-REQ IDs delivered: REQ-CAT-001, REQ-CAT-002
-NFR IDs addressed: NFR-MAINT-01
+## P03: Identity, roles and deny-by-default
+Goal (1 line): Sign-in, roles, permissions and the security posture every later endpoint inherits.
+REQ IDs delivered: REQ-IAM-001, REQ-IAM-002, REQ-IAM-003, REQ-IAM-004, REQ-IAM-005, REQ-IAM-006, REQ-IAM-007, REQ-IAM-008, REQ-IAM-009, REQ-IAM-010, REQ-IAM-011, REQ-IAM-012
+NFR IDs addressed: NFR-SEC-02, NFR-SEC-03, NFR-SEC-05, NFR-AUTHZ-01, NFR-AUTHZ-02, NFR-AUTHZ-03, NFR-OBS-01, NFR-ACC-02
 Depends on: P02
-Deliverables: Product API Controllers, EF Migrations
-RAM note: Standard API memory.
-UI: none — API only
-dodApplicable: D1, D2, D4, D5, D6, D7, D8, D13, D15
-acceptanceCriteria:
-  [PERSIST] REQ-CAT-001 / BR-PRD-01: Admin POST /api/products saves row in Products table with IsDraft=true.
-  [REJECT] REQ-CAT-001: POST /api/products without auth returns 401.
-minTests: 4
-minFrontendTests: 0
-phaseRoutes: []
-phaseSelectors: []
-dbObjects: ["Products", "ProductVariants"]
-smoke: { protectedPath: "/api/products", listPath: "/api/products/published", createPath: "/api/products", probeCreateBody: '{"name":"__PROBE__","isDraft":true}', probeTable: "Products", probeColumn: "Name", deepRoute: "", seedEmail: "admin@example.com", lowPrivEmail: "user@example.com" }
-Exit criteria table:
-| # | Command | Expected result | Proves REQ/NFR |
-|---|---|---|---|
-| 1 | `Invoke-Sql -Query "SELECT Name FROM Products WHERE Name='__PROBE__'"` | `__PROBE__` | REQ-CAT-001 Persist |
-Rollback plan if this phase fails: Revert EF migration, drop tables, reset git.
-
-## P04: Public Storefront (UI)
-Goal (1 line): Build the Angular public homepage listing published products.
-REQ IDs delivered: REQ-CAT-004, REQ-CAT-005
-NFR IDs addressed: NFR-UI-01, NFR-ACC-01, NFR-PERF-03
-Depends on: P03
-Deliverables: Angular Product List, HTTP Interceptors
-RAM note: Limit Node memory during build.
+Deliverables: Identity with EF stores, JWT plus rotating refresh tokens, permission catalogue seeding, role seeding, lockout, password reset, admin login screen, admin shell with role-aware navigation, the authorization matrix test harness
+RAM note: standard; one build at a time
 UI: yes
-dodApplicable: D1, D2, D9, D11, D12, D14, D15
+dodApplicable: D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15
 acceptanceCriteria:
-  [UI] REQ-CAT-004: Navigating to `/` displays the product title.
-  [REJECT] REQ-CAT-005: Navigating to drafted product returns 404 in UI.
-minTests: 4
-minFrontendTests: 4
-phaseRoutes: ["/", "/product/:id"]
-phaseSelectors: ["app-product-list", "app-product-detail"]
-dbObjects: []
-smoke: { protectedPath: "", listPath: "/", createPath: "", probeCreateBody: "", probeTable: "", probeColumn: "", deepRoute: "/product/1", seedEmail: "", lowPrivEmail: "" }
-Exit criteria table:
-| # | Command | Expected result | Proves REQ/NFR |
-|---|---|---|---|
-| 1 | `ng test --watch=false --browsers=ChromeHeadless` | SUCCESS | UI logic works |
-| 2 | `npx @axe-core/cli http://localhost:4200/` | 0 violations | NFR-ACC-01 |
-Rollback plan if this phase fails: Hard reset.
-
-## P05: Checkout & Webhooks (Paddle Integration)
-Goal (1 line): Integrate Paddle.js for checkout and process Paddle webhooks.
-REQ IDs delivered: REQ-PAY-001, REQ-PAY-002, REQ-PAY-003, REQ-PAY-004
-NFR IDs addressed: NFR-SEC-02
-Depends on: P04
-Deliverables: Paddle Checkout UI, Webhook API Controller, Signature Validation
-RAM note: Standard.
-UI: yes
-dodApplicable: D1, D2, D4, D5, D6, D7, D8, D13, D15
-acceptanceCriteria:
-  [PERSIST] REQ-PAY-002: Valid webhook inserts into PaymentEvents.
-  [REJECT] REQ-PAY-003: Invalid webhook signature returns 401.
-  [BR] REQ-PAY-004 / BR-ORD-01: Valid `payment_succeeded` inserts into Orders with Status='Paid'.
-minTests: 8
-minFrontendTests: 2
-phaseRoutes: ["/checkout"]
-phaseSelectors: ["app-checkout-button"]
-dbObjects: ["Orders", "PaymentEvents"]
-smoke: { protectedPath: "/api/webhooks/paddle", listPath: "", createPath: "/api/webhooks/paddle", probeCreateBody: '{"event":"payment_succeeded","transaction_id":"__PROBE__"}', probeTable: "Orders", probeColumn: "PaddleTransactionId", deepRoute: "", seedEmail: "admin@example.com", lowPrivEmail: "" }
-Exit criteria table:
-| # | Command | Expected result | Proves REQ/NFR |
-|---|---|---|---|
-| 1 | `Invoke-Sql -Query "SELECT Status FROM Orders WHERE PaddleTransactionId='__PROBE__'"` | `Paid` | REQ-PAY-004 |
-| 2 | `curl -X POST -H "Paddle-Signature: invalid" /api/webhooks/paddle` | 401 Unauthorized | NFR-SEC-02 |
-Rollback plan if this phase fails: Hard reset.
-
-## P06: License & Fulfillment Logic (Backend)
-Goal (1 line): Implement LicenseKey generation and DownloadLink generation on successful orders.
-REQ IDs delivered: REQ-LIC-001, REQ-FUL-001
-NFR IDs addressed: -
-Depends on: P05
-Deliverables: LicenseService, FulfillmentService
-RAM note: Standard.
-UI: none — backend logic only
-dodApplicable: D1, D4, D5, D6, D13, D15
-acceptanceCriteria:
-  [PERSIST] REQ-LIC-001 / BR-LIC-01: Order transition to Paid creates LicenseKey row.
-  [PERSIST] REQ-FUL-001 / BR-DL-01: Order transition to Paid creates DownloadLink row.
-minTests: 4
-minFrontendTests: 0
-phaseRoutes: []
-phaseSelectors: []
-dbObjects: ["LicenseKeys", "DownloadLinks"]
-smoke: { protectedPath: "", listPath: "", createPath: "", probeCreateBody: "", probeTable: "LicenseKeys", probeColumn: "KeyValue", deepRoute: "", seedEmail: "", lowPrivEmail: "" }
-Exit criteria table:
-| # | Command | Expected result | Proves REQ/NFR |
-|---|---|---|---|
-| 1 | `dotnet test --filter "Category=Fulfillment"` | Passed | REQ-LIC-001 |
-Rollback plan if this phase fails: Hard reset.
-
-## P07: Customer Portal (UI)
-Goal (1 line): Allow authenticated customers to view their purchases, license keys, and download assets.
-REQ IDs delivered: REQ-LIC-002, REQ-FUL-002, REQ-FUL-003
-NFR IDs addressed: NFR-PERF-04
-Depends on: P06
-Deliverables: Portal Angular Module, Auth Interceptor, API endpoints for Customer.
-RAM note: Standard.
-UI: yes
-dodApplicable: D1, D2, D9, D11, D12, D14, D15
-acceptanceCriteria:
-  [UI] REQ-LIC-002: Customer sees "Your Licenses" on `/portal/licenses`.
-  [REJECT] REQ-FUL-003 / BR-DL-01: Expired download link returns 403.
-minTests: 6
+  [BR] REQ-IAM-002 / BR-IAM-02: given 5 failed sign-ins within 15 minutes, a 6th attempt with the correct password returns 423 ACCOUNT_LOCKED and the lock clears exactly 15 minutes later.
+  [REJECT] REQ-IAM-003 / BR-IAM-03: presenting an already-rotated refresh token returns 401, revokes the entire token chain and queues an alert.
+  [PERSIST] REQ-IAM-001: a successful sign-in writes a row to `LoginAttempts` with `Succeeded = 1` and a hashed refresh token to `RefreshTokens`.
+  [UI] REQ-IAM-001: the route `/admin/login` renders the sign-in form, and a wrong password shows the text "Email or password is incorrect" without revealing which.
+minTests: 24
 minFrontendTests: 6
-phaseRoutes: ["/portal", "/portal/licenses"]
-phaseSelectors: ["app-portal-layout", "app-license-list"]
-dbObjects: []
-smoke: { protectedPath: "/api/portal/licenses", listPath: "/api/portal/licenses", createPath: "", probeCreateBody: "", probeTable: "", probeColumn: "", deepRoute: "/portal/licenses", seedEmail: "", lowPrivEmail: "user@example.com" }
+phaseRoutes: ["/admin/login", "/admin"]
+phaseSelectors: ["app-login", "app-admin-shell"]
+dbObjects: ["AspNetUsers", "AspNetRoles", "AspNetUserRoles", "Permissions", "RolePermissions", "RefreshTokens", "LoginAttempts", "AuditLogs", "SystemSettings"]
+smoke: { protectedPath: "/api/v1/admin/users", listPath: "/api/v1/admin/users", createPath: "/api/v1/admin/users", probeCreateBody: "{\"email\":\"__PROBE__@example.test\",\"fullName\":\"Probe User\",\"role\":\"Editor\"}", probeTable: "AspNetUsers", probeColumn: "Email", deepRoute: "/admin/login", seedEmail: "owner@softwaremanagement.test", lowPrivEmail: "editor@softwaremanagement.test" }
 Exit criteria table:
 | # | Command | Expected result | Proves REQ/NFR |
 |---|---|---|---|
-| 1 | `ng build` size check | Lazy chunk < 150kb | NFR-PERF-04 |
-Rollback plan if this phase fails: Hard reset.
+| 1 | POST `/api/v1/auth/login` with the seeded owner | 200 with an access token whose expiry is 15 minutes | REQ-IAM-001 |
+| 2 | 6 rapid wrong-password attempts | 6th returns 423 | REQ-IAM-002 |
+| 3 | replay a rotated refresh token | 401 and the chain shows `RevokedReason` | REQ-IAM-003 |
+| 4 | anonymous sweep over every OpenAPI path outside the allowlist | every path 401 | NFR-AUTHZ-01 |
+| 5 | Editor token against `/api/v1/admin/users` | 403 | NFR-AUTHZ-02 |
+| 6 | delete the last Owner | 409 `LAST_OWNER` | REQ-IAM-007 |
+Rollback plan if this phase fails: revert the phase commits, drop the identity migration, restore the P02 backup; no other module depends on this phase yet.
 
-## P08: License Validation API
-Goal (1 line): Public API for external software clients to validate keys and record activations.
-REQ IDs delivered: REQ-LIC-003, REQ-LIC-004, REQ-LIC-005
-NFR IDs addressed: NFR-CONC-02, NFR-SEC-04
-Depends on: P06
-Deliverables: Validation Controller, Rate Limiting configuration.
-RAM note: Standard.
-UI: none
-dodApplicable: D1, D4, D5, D6, D7, D13, D15
+## P04: Site content and company profile
+Goal (1 line): The company can publish its own pages, menus, services, stack, team and media, with versions, scheduling and SEO.
+REQ IDs delivered: REQ-SITE-001, REQ-SITE-002, REQ-SITE-003, REQ-SITE-004, REQ-SITE-005, REQ-SITE-006, REQ-SITE-007, REQ-SITE-008, REQ-SITE-009, REQ-SITE-010, REQ-SITE-011, REQ-SITE-012
+NFR IDs addressed: NFR-SEO-01, NFR-SEO-03, NFR-ACC-01, NFR-ACC-03, NFR-I18N-01, NFR-DATA-03, NFR-SEC-06, NFR-PERF-02
+Depends on: P03
+Deliverables: content entities with the Draft/Modified/Published state machine, scheduled publish job, content versions with restore, navigation, services and technologies, media library with magic-number validation and SkiaSharp resizing, SEO metadata and automatic redirects, the public home, about, services and contact pages server-rendered
+RAM note: SSR is introduced here; build the frontend alone
+UI: yes
+dodApplicable: D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15
 acceptanceCriteria:
-  [PERSIST] REQ-LIC-005 / BR-LIC-02: Valid activation inserts into LicenseActivations.
-  [REJECT] REQ-LIC-004 / BR-LIC-03: Expired key returns 403 Forbidden.
-minTests: 6
-minFrontendTests: 0
-phaseRoutes: []
-phaseSelectors: []
-dbObjects: ["LicenseActivations"]
-smoke: { protectedPath: "", listPath: "", createPath: "/api/licenses/validate", probeCreateBody: '{"key":"__PROBE__"}', probeTable: "LicenseActivations", probeColumn: "MachineId", deepRoute: "", seedEmail: "", lowPrivEmail: "" }
+  [BR] REQ-SITE-004 / BR-SITE-01: editing a Published page sets its status to Modified and the public URL keeps serving the previously published body until the draft is published.
+  [BR] REQ-SITE-006 / BR-SITE-04: a publish time of 12:00 entered in the admin's timezone is stored as the correct UTC instant and executed within 60 seconds of it.
+  [REJECT] REQ-SITE-003 / BR-SITE-03: publishing a page whose hero image is archived returns 422 listing the offending reference.
+  [PERSIST] REQ-SITE-003: publishing writes a row to `ContentVersions` with the next `VersionNumber` for that page.
+  [UI] REQ-SITE-011: `/about` returns server-rendered HTML containing the configured company name and a `<link rel="canonical">` element.
+minTests: 24
+minFrontendTests: 8
+phaseRoutes: ["/about", "/services", "/contact", "/admin/pages", "/admin/media"]
+phaseSelectors: ["app-page-list", "app-page-editor", "app-media-library", "app-public-page"]
+dbObjects: ["Pages", "PageSections", "NavigationItems", "Services", "Technologies", "ServiceTechnologies", "TeamMembers", "Testimonials", "MediaAssets", "SeoMetadata", "Redirects", "ContentVersions", "Announcements"]
+smoke: { protectedPath: "/api/v1/admin/pages", listPath: "/api/v1/admin/pages", createPath: "/api/v1/admin/pages", probeCreateBody: "{\"title\":\"__PROBE__\",\"slug\":\"probe-page\",\"pageType\":\"Custom\"}", probeTable: "Pages", probeColumn: "Title", deepRoute: "/about", seedEmail: "owner@softwaremanagement.test", lowPrivEmail: "sales@softwaremanagement.test" }
 Exit criteria table:
 | # | Command | Expected result | Proves REQ/NFR |
 |---|---|---|---|
-| 1 | `curl -X POST /api/licenses/validate -d '{"key":"expired"}'` | 403 Forbidden | REQ-LIC-004 |
-| 2 | `Artillery test` | Rate limit blocks after 10req/min | NFR-SEC-04 |
-Rollback plan if this phase fails: Hard reset.
+| 1 | POST a page, then SQL `SELECT Title FROM Pages WHERE Title='PROBE-<nonce>'` | one row | REQ-SITE-001 |
+| 2 | publish, edit, then GET the public URL | the previously published body | REQ-SITE-004 |
+| 3 | publish with an archived reference | 422 naming the reference | REQ-SITE-003 |
+| 4 | rename the slug of a published page, GET the old path | 301 to the new path | REQ-SITE-011 |
+| 5 | upload a 30 MB file | 413 before any file is written | REQ-SITE-009 |
+| 6 | `curl.exe http://localhost:4300/about` | HTML containing the company name without JavaScript | NFR-SEO-01 |
+| 7 | axe scan of `/about` and `/admin/pages` | zero serious or critical violations | NFR-ACC-01 |
+Rollback plan if this phase fails: revert to the P03 tag, drop the content migration, restore the P03 database backup; identity is unaffected.
 
-*(P09 to P12 omitted for brevity in draft, will encompass Subscriptions and Admin panel)*
+## P05: Product catalogue - administration
+Goal (1 line): Products, categories, features, screenshots, plans and demo links can be created and maintained correctly.
+REQ IDs delivered: REQ-CAT-001, REQ-CAT-002, REQ-CAT-003, REQ-CAT-004, REQ-CAT-005, REQ-CAT-006, REQ-CAT-007, REQ-CAT-008
+NFR IDs addressed: NFR-CONC-02, NFR-PERF-04, NFR-OBS-04, NFR-ACC-03, NFR-MAINT-05
+Depends on: P04
+Deliverables: catalogue entities and migrations, plan and plan-feature editing with the recommended-plan rule, screenshot ordering, demo environment record, admin screens for all of it
+RAM note: standard
+UI: yes
+dodApplicable: D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15
+acceptanceCriteria:
+  [BR] REQ-CAT-006 / BR-CAT-03: marking plan B recommended while plan A already is clears A's flag in the same transaction, leaving exactly one recommended plan.
+  [BR] REQ-CAT-005 / BR-CAT-02: a plan saved at 4999.00 INR stores exactly 4999.00 with its currency code and no floating-point drift.
+  [REJECT] REQ-CAT-001 / BR-CAT-07: creating a product with a slug already used returns 409 SLUG_TAKEN and suggests an alternative.
+  [PERSIST] REQ-CAT-005: saving a plan writes a row to `PricingPlans` with `Price` and `Currency` populated.
+  [UI] REQ-CAT-003: `/admin/products` lists the created product and its feature count.
+minTests: 16
+minFrontendTests: 6
+phaseRoutes: ["/admin/products", "/admin/products/new"]
+phaseSelectors: ["app-product-list", "app-product-editor", "app-plan-editor"]
+dbObjects: ["Products", "ProductCategories", "ProductFeatures", "ProductScreenshots", "PricingPlans", "PlanFeatures", "DemoEnvironments", "FaqItems"]
+smoke: { protectedPath: "/api/v1/admin/products", listPath: "/api/v1/admin/products", createPath: "/api/v1/admin/products", probeCreateBody: "{\"name\":\"__PROBE__\",\"slug\":\"probe-product\",\"tagline\":\"probe\",\"summary\":\"probe summary\",\"categorySlug\":\"erp\"}", probeTable: "Products", probeColumn: "Name", deepRoute: "/admin/products", seedEmail: "owner@softwaremanagement.test", lowPrivEmail: "sales@softwaremanagement.test" }
+Exit criteria table:
+| # | Command | Expected result | Proves REQ/NFR |
+|---|---|---|---|
+| 1 | POST a product, SQL `SELECT Name FROM Products WHERE Name='PROBE-<nonce>'` | one row | REQ-CAT-001 |
+| 2 | mark a second plan recommended, SQL count where `IsRecommended=1` | exactly 1 | REQ-CAT-006 |
+| 3 | POST a duplicate slug | 409 `SLUG_TAKEN` | REQ-CAT-001 |
+| 4 | POST a yearly price above 12x monthly | 422 | REQ-CAT-006 |
+| 5 | Sales token against `/api/v1/admin/products` | 403 | NFR-AUTHZ-02 |
+Rollback plan if this phase fails: revert to the P04 tag and drop the catalogue migration; content and identity are unaffected.
+
+## P06: Public catalogue and product pages
+Goal (1 line): Visitors can browse, search and read product pages that are complete, fast and server-rendered.
+REQ IDs delivered: REQ-CAT-009, REQ-CAT-010, REQ-CAT-011, REQ-CAT-012, REQ-CAT-013, REQ-CAT-014, REQ-CAT-015
+NFR IDs addressed: NFR-SEO-01, NFR-PERF-01, NFR-PERF-02, NFR-PERF-03, NFR-AUTHZ-04, NFR-ACC-01, NFR-BROW-01
+Depends on: P05
+Deliverables: public catalogue and product detail pages with SSR, plan comparison table, FAQ accordion, product search and filtering, first-party page-view counters, publish readiness validation
+RAM note: Angular build only; close other applications
+UI: yes
+dodApplicable: D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15
+acceptanceCriteria:
+  [BR] REQ-CAT-009 / BR-CAT-01: publishing a product with only 2 features is refused, and the same product with 3 features, 1 screenshot and 1 plan publishes and appears in the public catalogue within 5 seconds.
+  [BR] REQ-CAT-010 / BR-CAT-05: a product card shows the lowest published non-free plan price for that product.
+  [REJECT] REQ-CAT-010 / BR-SITE-01: requesting a draft product's public URL anonymously returns 404, never 403.
+  [PERSIST] REQ-CAT-010: a public product page view increments the row in `PageViewStats` for that path and date.
+  [UI] REQ-CAT-011: `/products/<slug>` renders the feature list, the screenshot gallery and the plan table, and hides the demo button when the demo is marked Down.
+minTests: 14
+minFrontendTests: 8
+phaseRoutes: ["/products", "/products/:slug"]
+phaseSelectors: ["app-product-catalog", "app-product-detail", "app-plan-table"]
+dbObjects: ["PageViewStats"]
+smoke: { protectedPath: "/api/v1/admin/products", listPath: "/api/v1/public/products", createPath: "/api/v1/admin/products", probeCreateBody: "{\"name\":\"__PROBE__\",\"slug\":\"probe-public\",\"tagline\":\"probe\",\"summary\":\"probe summary\",\"categorySlug\":\"erp\"}", probeTable: "Products", probeColumn: "Name", deepRoute: "/products", seedEmail: "owner@softwaremanagement.test", lowPrivEmail: "editor@softwaremanagement.test" }
+Exit criteria table:
+| # | Command | Expected result | Proves REQ/NFR |
+|---|---|---|---|
+| 1 | publish a product with 2 features | 422 with the failing counts | REQ-CAT-009 |
+| 2 | `curl.exe http://localhost:4300/products` | server-rendered HTML listing only published products | REQ-CAT-010 |
+| 3 | GET a draft product's public URL | 404 | NFR-AUTHZ-04 |
+| 4 | GET `/api/v1/public/products?pageSize=100000` | at most 100 items | NFR-PERF-04 |
+| 5 | Lighthouse mobile on `/products/<slug>` | LCP under 2.5 s | NFR-PERF-02 |
+| 6 | axe scan of `/products` and a product page | zero serious or critical violations | NFR-ACC-01 |
+Rollback plan if this phase fails: revert the public routes to the P05 tag; the admin catalogue keeps working and no schema change is lost.
+
+## P07: Lead capture
+Goal (1 line): A visitor's enquiry is captured, protected from bots, consented, acknowledged and never silently lost.
+REQ IDs delivered: REQ-LEAD-001, REQ-LEAD-002, REQ-LEAD-003, REQ-LEAD-004, REQ-LEAD-005, REQ-LEAD-006, REQ-LEAD-007, REQ-LEAD-008, REQ-NOTIF-001, REQ-NOTIF-002, REQ-NOTIF-003, REQ-NOTIF-004
+NFR IDs addressed: NFR-SEC-05, NFR-PRIV-02, NFR-PRIV-03, NFR-OBS-04, NFR-AVAIL-03, NFR-ACC-03
+Depends on: P06
+Deliverables: form definitions and fields, public form rendering, Turnstile server-side verification with idempotency, honeypot, rate limiting, consent capture, submission and lead creation, the transactional outbox with the retry schedule, acknowledgement and owner-alert templates
+RAM note: standard
+UI: yes
+dodApplicable: D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15
+acceptanceCriteria:
+  [BR] REQ-LEAD-004 / BR-LEAD-02: a Turnstile token older than 300 seconds or already used is rejected with 400 CAPTCHA_INVALID and creates no lead.
+  [BR] REQ-LEAD-005 / BR-LEAD-04: the 6th submission from one IP within 10 minutes returns 429 with a `Retry-After` header.
+  [REJECT] REQ-LEAD-006 / BR-LEAD-06: submitting with the consent box unticked returns 422 CONSENT_REQUIRED and stores nothing.
+  [PERSIST] REQ-LEAD-001: an accepted submission writes one row to `FormSubmissions`, one to `ConsentRecords` and one to `Leads` with stage New, inside a single transaction.
+  [UI] REQ-LEAD-003: `/request-demo` opened from a product page pre-selects that product and, on success, shows the enquiry reference.
+minTests: 24
+minFrontendTests: 8
+phaseRoutes: ["/contact", "/request-demo", "/request-quote"]
+phaseSelectors: ["app-contact-form", "app-demo-request", "app-consent-field"]
+dbObjects: ["FormDefinitions", "FormFields", "FormSubmissions", "ConsentRecords", "Leads", "EmailTemplates", "OutboxEmails", "EmailDeliveryLogs"]
+smoke: { protectedPath: "/api/v1/leads", listPath: "/api/v1/leads", createPath: "/api/v1/public/forms/contact/submit", probeCreateBody: "{\"fullName\":\"__PROBE__\",\"email\":\"probe@example.test\",\"message\":\"probe enquiry\",\"consent\":true,\"captchaToken\":\"test-bypass\"}", probeTable: "Leads", probeColumn: "FullName", deepRoute: "/contact", seedEmail: "owner@softwaremanagement.test", lowPrivEmail: "editor@softwaremanagement.test" }
+Exit criteria table:
+| # | Command | Expected result | Proves REQ/NFR |
+|---|---|---|---|
+| 1 | POST the contact form, SQL `SELECT FullName FROM Leads WHERE FullName='PROBE-<nonce>'` | one row | REQ-LEAD-001 |
+| 2 | replay the same captcha token | 400 `CAPTCHA_INVALID` | REQ-LEAD-004 |
+| 3 | 6 submissions from one IP in 10 minutes | 429 with `Retry-After` | REQ-LEAD-005 |
+| 4 | submit without consent | 422 `CONSENT_REQUIRED` | REQ-LEAD-006 |
+| 5 | submit the same body twice within 10 minutes | one lead, one acknowledgement queued | REQ-LEAD-007 |
+| 6 | SQL `SELECT Status, AttemptCount FROM OutboxEmails` after a forced SMTP failure | attempt count increased with the next attempt scheduled | REQ-NOTIF-004 |
+| 7 | grep the API log for the submitter's email | masked as `a***@example.test` | NFR-PRIV-03 |
+Rollback plan if this phase fails: revert to the P06 tag and drop the lead migration; the public site keeps working without forms, and the contact page falls back to the email address.
+
+## P08: Lead pipeline
+Goal (1 line): The owner works every enquiry through a pipeline with activities, reminders, SLA and duplicate handling.
+REQ IDs delivered: REQ-LEAD-009, REQ-LEAD-010, REQ-LEAD-011, REQ-LEAD-012, REQ-LEAD-013, REQ-LEAD-014, REQ-LEAD-015, REQ-LEAD-016, REQ-LEAD-017, REQ-LEAD-018
+NFR IDs addressed: NFR-PERF-01, NFR-PERF-05, NFR-CONC-02, NFR-OBS-05, NFR-ACC-02
+Depends on: P07
+Deliverables: lead inbox with filters and saved views, stage machine, activity timeline, follow-up reminders, business-hours SLA calculation with holidays, stale flagging, merge, duplicate suggestion, spam handling
+RAM note: standard
+UI: yes
+dodApplicable: D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15
+acceptanceCriteria:
+  [BR] REQ-LEAD-013 / BR-LEAD-10: a lead created at 23:55 IST on Saturday and first answered at 10:00 IST on Monday records exactly 1 hour of business-hours response time.
+  [BR] REQ-LEAD-016 / BR-LEAD-08: merging two leads keeps the earliest-created record as the survivor and appends the other's activities.
+  [REJECT] REQ-LEAD-010 / BR-LEAD-09: moving a lead to Disqualified with a 4-character reason returns 422 requiring at least 10 characters.
+  [PERSIST] REQ-LEAD-010: a stage change writes a `LeadActivities` row with `FromStage`, `ToStage` and the acting user.
+  [UI] REQ-LEAD-009: `/admin/leads` lists unanswered leads first, each showing its SLA countdown, and excludes leads marked Spam.
+minTests: 20
+minFrontendTests: 6
+phaseRoutes: ["/admin/leads", "/admin/leads/:id"]
+phaseSelectors: ["app-lead-inbox", "app-lead-detail", "app-lead-timeline"]
+dbObjects: ["LeadActivities", "Holidays"]
+smoke: { protectedPath: "/api/v1/leads", listPath: "/api/v1/leads", createPath: "/api/v1/leads/{id}/activities", probeCreateBody: "{\"activityType\":\"Note\",\"direction\":\"Internal\",\"body\":\"__PROBE__\"}", probeTable: "LeadActivities", probeColumn: "Body", deepRoute: "/admin/leads", seedEmail: "sales@softwaremanagement.test", lowPrivEmail: "editor@softwaremanagement.test" }
+Exit criteria table:
+| # | Command | Expected result | Proves REQ/NFR |
+|---|---|---|---|
+| 1 | POST an activity, SQL `SELECT Body FROM LeadActivities WHERE Body='PROBE-<nonce>'` | one row | REQ-LEAD-011 |
+| 2 | SLA test with a Saturday-night lead and a Monday reply | 1 business hour | REQ-LEAD-013 |
+| 3 | disqualify with a short reason | 422 | REQ-LEAD-010 |
+| 4 | merge two leads, SQL check of the survivor | earliest `CreatedAtUtc` survives | REQ-LEAD-016 |
+| 5 | Editor token against `/api/v1/leads` | 403 | NFR-AUTHZ-02 |
+| 6 | dashboard summary query count | at most 4 round trips | NFR-PERF-05 |
+Rollback plan if this phase fails: revert to the P07 tag; capture keeps working and leads remain readable through the API.
+
+## P09: Customers and quotes
+Goal (1 line): A qualified lead becomes a customer record and a priced, numbered, sendable quote.
+REQ IDs delivered: REQ-CUST-001, REQ-CUST-002, REQ-CUST-003, REQ-CUST-004, REQ-CUST-005, REQ-CUST-006, REQ-CUST-007, REQ-CUST-008, REQ-SALE-001, REQ-SALE-002, REQ-SALE-003, REQ-SALE-004, REQ-SALE-005, REQ-SALE-006
+NFR IDs addressed: NFR-CONC-03, NFR-PERF-01, NFR-SEC-01, NFR-OBS-04, NFR-I18N-02
+Depends on: P08
+Deliverables: organisations and contacts with GSTIN validation, lead conversion, deduplication suggestions, quotes with line items, per-line rounding and tax, discount approval rule, gapless numbering via `NumberSequences`, quote PDF and send, expiry sweep
+RAM note: standard
+UI: yes
+dodApplicable: D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15
+acceptanceCriteria:
+  [BR] REQ-SALE-003 / BR-SALE-03: two lines of 14997.00 and 2500.00 at 18 percent produce tax rounded per line and a grand total equal to the sum of the rounded line values.
+  [BR] REQ-SALE-001 / BR-SALE-01: 20 quotes created concurrently receive a contiguous block of numbers with no gap and no duplicate.
+  [REJECT] REQ-SALE-004 / BR-SALE-04: a Sales user applying a 20 percent line discount receives 403 APPROVAL_REQUIRED.
+  [PERSIST] REQ-SALE-001: creating a quote writes a `Quotes` row carrying a financial-year number in the format `Q/<FY>/<00001>`.
+  [UI] REQ-CUST-001: `/admin/customers` shows the created organisation, and an invalid GSTIN is rejected in the form with the expected pattern displayed.
+minTests: 28
+minFrontendTests: 8
+phaseRoutes: ["/admin/customers", "/admin/quotes", "/admin/quotes/:id"]
+phaseSelectors: ["app-organisation-list", "app-quote-editor", "app-quote-lines"]
+dbObjects: ["Organisations", "Contacts", "Quotes", "QuoteLineItems", "NumberSequences"]
+smoke: { protectedPath: "/api/v1/quotes", listPath: "/api/v1/organisations", createPath: "/api/v1/organisations", probeCreateBody: "{\"legalName\":\"__PROBE__\",\"displayName\":\"__PROBE__\",\"country\":\"IN\"}", probeTable: "Organisations", probeColumn: "LegalName", deepRoute: "/admin/customers", seedEmail: "sales@softwaremanagement.test", lowPrivEmail: "editor@softwaremanagement.test" }
+Exit criteria table:
+| # | Command | Expected result | Proves REQ/NFR |
+|---|---|---|---|
+| 1 | POST an organisation, SQL `SELECT LegalName FROM Organisations WHERE LegalName='PROBE-<nonce>'` | one row | REQ-CUST-001 |
+| 2 | POST a 14-character GSTIN | 422 with the pattern | REQ-CUST-001 |
+| 3 | 20 concurrent quote creates, SQL number check | contiguous, no duplicates | REQ-SALE-001 |
+| 4 | Sales user applies a 20 percent discount | 403 `APPROVAL_REQUIRED` | REQ-SALE-004 |
+| 5 | edit a sent quote | 409 offering a revision | REQ-SALE-005 |
+| 6 | rounding unit test on the two-line example | grand total equals the sum of rounded lines | REQ-SALE-003 |
+Rollback plan if this phase fails: revert to the P08 tag and drop the sales migration; leads and their history are untouched.
+
+## P10: Tenants, subscriptions, invoices and payments
+Goal (1 line): An accepted quote becomes a tenant and a subscription that bills, dunns, renews and can be cancelled.
+REQ IDs delivered: REQ-SALE-007, REQ-SALE-008, REQ-SALE-009, REQ-SALE-010, REQ-SALE-011, REQ-SALE-012, REQ-SALE-013, REQ-SALE-014, REQ-SALE-015, REQ-SALE-016
+NFR IDs addressed: NFR-CONC-03, NFR-DEP-05, NFR-OBS-05, NFR-RET-01, NFR-I18N-02
+Depends on: P09
+Deliverables: tenant records, subscription state machine with events, trial handling, invoices with gapless numbering, payments with overpayment protection, dunning and suspension sweeps, renewal generation and reminders, proration
+RAM note: standard
+UI: yes
+dodApplicable: D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15
+acceptanceCriteria:
+  [BR] REQ-SALE-013 / BR-SALE-08: an invoice 8 days past due moves the subscription to PastDue, and at 22 days to Suspended, each writing a `SubscriptionEvents` row.
+  [BR] REQ-SALE-009 / BR-SALE-07: a trial started today ends exactly 14 days later and expires automatically if no plan is confirmed.
+  [REJECT] REQ-SALE-012 / BR-SALE-09: recording a payment of 20000.00 against an invoice with 7497.00 outstanding returns 422 OVERPAYMENT naming the outstanding amount.
+  [PERSIST] REQ-SALE-011: issuing an invoice writes an `Invoices` row with a gapless `INV/<FY>/<00001>` number and the period dates.
+  [UI] REQ-SALE-008: `/admin/subscriptions` lists the tenant with its product, plan, status and renewal date.
+minTests: 20
+minFrontendTests: 6
+phaseRoutes: ["/admin/subscriptions", "/admin/invoices", "/admin/invoices/:id"]
+phaseSelectors: ["app-subscription-list", "app-invoice-detail", "app-payment-form"]
+dbObjects: ["Tenants", "Subscriptions", "SubscriptionEvents", "Invoices", "Payments"]
+smoke: { protectedPath: "/api/v1/subscriptions", listPath: "/api/v1/subscriptions", createPath: "/api/v1/tenants", probeCreateBody: "{\"name\":\"__PROBE__\",\"organisationId\":\"{orgId}\",\"productId\":\"{productId}\",\"environment\":\"Production\"}", probeTable: "Tenants", probeColumn: "Name", deepRoute: "/admin/subscriptions", seedEmail: "sales@softwaremanagement.test", lowPrivEmail: "editor@softwaremanagement.test" }
+Exit criteria table:
+| # | Command | Expected result | Proves REQ/NFR |
+|---|---|---|---|
+| 1 | POST a tenant, SQL `SELECT Name FROM Tenants WHERE Name='PROBE-<nonce>'` | one row | REQ-SALE-008 |
+| 2 | accept the same quote twice | one subscription, second call returns it | REQ-SALE-007 |
+| 3 | overpay an invoice | 422 `OVERPAYMENT` | REQ-SALE-012 |
+| 4 | age an invoice 8 then 22 days, run the sweep | PastDue then Suspended with events | REQ-SALE-013 |
+| 5 | run two schedulers against one database | one dunning email only | NFR-DEP-05 |
+| 6 | proration unit test, 20 of 30 days | matches the documented formula | REQ-SALE-015 |
+Rollback plan if this phase fails: revert to the P09 tag and drop the subscription migration; quotes remain intact and can be re-accepted.
+
+## P11: Portfolio and public API directory
+Goal (1 line): Delivered projects, case studies with real numbers, client logos and the public API catalogue.
+REQ IDs delivered: REQ-PRJ-001, REQ-PRJ-002, REQ-PRJ-003, REQ-PRJ-004, REQ-PRJ-005, REQ-PRJ-006, REQ-PRJ-007, REQ-PRJ-008, REQ-PRJ-009, REQ-API-001, REQ-API-002, REQ-API-003, REQ-API-004, REQ-API-005, REQ-API-006, REQ-API-007, REQ-API-008
+NFR IDs addressed: NFR-SEO-01, NFR-SEO-04, NFR-ACC-01, NFR-PERF-02, NFR-BROW-01
+Depends on: P10
+Deliverables: projects and case studies with outcome metrics, client logos with permission enforcement, testimonial linkage, industry filtering, public portfolio and developer pages, API entries with versions, current-version rule, deprecation notice with sunset dates
+RAM note: Angular build only
+UI: yes
+dodApplicable: D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15
+acceptanceCriteria:
+  [BR] REQ-API-003 / BR-API-03: deprecating a version with a sunset date 30 days away is refused, and 120 days away is accepted and shown publicly.
+  [BR] REQ-PRJ-003 / BR-PRJ-01: a client logo without permission renders the anonymised industry label instead of the client name.
+  [REJECT] REQ-PRJ-002 / BR-PRJ-02: publishing a case study with no outcome metric returns 422.
+  [PERSIST] REQ-API-001: publishing an API entry writes its `ApiVersions` row with exactly one version flagged current.
+  [UI] REQ-API-004: `/developers` renders each published API entry with its base URL, auth scheme and current version.
+minTests: 34
+minFrontendTests: 10
+phaseRoutes: ["/projects", "/projects/:slug", "/developers"]
+phaseSelectors: ["app-project-list", "app-case-study", "app-api-directory"]
+dbObjects: ["Projects", "CaseStudies", "ClientLogos", "ApiCatalogEntries", "ApiVersions"]
+smoke: { protectedPath: "/api/v1/admin/projects", listPath: "/api/v1/public/projects", createPath: "/api/v1/admin/projects", probeCreateBody: "{\"title\":\"__PROBE__\",\"slug\":\"probe-project\",\"industry\":\"Healthcare\",\"summary\":\"probe summary\",\"startedOn\":\"2026-01-01\"}", probeTable: "Projects", probeColumn: "Title", deepRoute: "/projects", seedEmail: "owner@softwaremanagement.test", lowPrivEmail: "sales@softwaremanagement.test" }
+Exit criteria table:
+| # | Command | Expected result | Proves REQ/NFR |
+|---|---|---|---|
+| 1 | POST a project, SQL `SELECT Title FROM Projects WHERE Title='PROBE-<nonce>'` | one row | REQ-PRJ-001 |
+| 2 | publish a case study with no metric | 422 | REQ-PRJ-002 |
+| 3 | publish a project whose client logo lacks permission | public page shows the anonymised label | REQ-PRJ-003 |
+| 4 | deprecate with a 30-day sunset | 422 | REQ-API-003 |
+| 5 | `curl.exe http://localhost:4300/developers` | server-rendered HTML listing published API entries | NFR-SEO-01 |
+| 6 | parse the JSON-LD on a case study page | valid JSON with the required properties | NFR-SEO-04 |
+Rollback plan if this phase fails: revert to the P10 tag and drop the portfolio migration; nothing in sales or leads depends on it.
+
+## P12: Reporting, dashboards and notification visibility
+Goal (1 line): The owner can see the funnel, the SLA, the pipeline, the money and every email the system ever tried to send.
+REQ IDs delivered: REQ-RPT-001, REQ-RPT-002, REQ-RPT-003, REQ-RPT-004, REQ-RPT-005, REQ-RPT-006, REQ-RPT-007, REQ-RPT-008, REQ-RPT-009, REQ-NOTIF-005, REQ-NOTIF-006, REQ-NOTIF-007, REQ-NOTIF-008, REQ-NOTIF-009, REQ-NOTIF-010
+NFR IDs addressed: NFR-PERF-05, NFR-PERF-06, NFR-OBS-05, NFR-PRIV-03, NFR-DATA-02
+Depends on: P11
+Deliverables: funnel, traffic and conversion, SLA, quote pipeline, MRR, renewals, invoice register and ageing, CSV and XLSX export, the morning dashboard, delivery-log viewer, template editing, daily digest, unsubscribe, secret-leak guard on composition, per-user alert preferences
+RAM note: seeded year-3 volume test runs here; run it alone
+UI: yes
+dodApplicable: D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15
+acceptanceCriteria:
+  [BR] REQ-RPT-001 / BR-RPT-02: with 100 leads of which 10 are spam and 5 merged, the funnel denominator is 85 and each stage percentage is computed against it.
+  [BR] REQ-RPT-005 / BR-SALE-08: MRR divides a yearly subscription by 12 and excludes suspended subscriptions, reporting them separately as at-risk.
+  [REJECT] REQ-RPT-001 / BR-RPT-01: requesting a report window wider than 24 months returns 422 suggesting an export.
+  [PERSIST] REQ-RPT-008: requesting an export writes an `ExportJobs` row with its row count and expiry.
+  [UI] REQ-NOTIF-005: `/admin/outbox` shows each delivery attempt with its SMTP status, response text and duration, and dead-lettered messages first.
+minTests: 30
+minFrontendTests: 10
+phaseRoutes: ["/admin/reports", "/admin/outbox", "/admin/dashboard"]
+phaseSelectors: ["app-report-dashboard", "app-outbox-list", "app-funnel-chart"]
+dbObjects: ["ExportJobs", "Unsubscribes"]
+smoke: { protectedPath: "/api/v1/reports/funnel", listPath: "/api/v1/reports/funnel", createPath: "/api/v1/exports", probeCreateBody: "{\"entityType\":\"__PROBE__\",\"format\":\"Csv\"}", probeTable: "ExportJobs", probeColumn: "EntityType", deepRoute: "/admin/dashboard", seedEmail: "owner@softwaremanagement.test", lowPrivEmail: "editor@softwaremanagement.test" }
+Exit criteria table:
+| # | Command | Expected result | Proves REQ/NFR |
+|---|---|---|---|
+| 1 | POST an export, SQL `SELECT EntityType FROM ExportJobs WHERE EntityType='PROBE-<nonce>'` | one row | REQ-RPT-008 |
+| 2 | funnel with 10 spam and 5 merged of 100 | denominator 85 | REQ-RPT-001 |
+| 3 | request a 30-month window | 422 | REQ-RPT-001 |
+| 4 | MRR with three monthly and one yearly subscription | yearly divided by 12, suspended excluded | REQ-RPT-005 |
+| 5 | dashboard at year-3 seeded volume | under 800 ms, at most 4 round trips | NFR-PERF-05 |
+| 6 | compose a message containing a token | send blocked and logged | REQ-NOTIF-009 |
+Rollback plan if this phase fails: revert to the P11 tag; reports are additive and no earlier module depends on them.
+
+## P13: Integrations, SEO plumbing and settings
+Goal (1 line): The site talks to the outside world correctly: webhooks, demo health, sitemap, structured data, consent-gated analytics and the settings that drive all of it.
+REQ IDs delivered: REQ-INT-001, REQ-INT-002, REQ-INT-003, REQ-INT-004, REQ-INT-005, REQ-INT-006, REQ-INT-007, REQ-INT-008, REQ-INT-009, REQ-ADM-001, REQ-ADM-002, REQ-ADM-003, REQ-ADM-004
+NFR IDs addressed: NFR-SEO-02, NFR-SEO-03, NFR-SEO-04, NFR-PRIV-04, NFR-SEC-03, NFR-AVAIL-04, NFR-OBS-05
+Depends on: P12
+Deliverables: signed outbound webhooks with retry and replay, secret rotation, hourly demo-link health checks, sitemap and robots generation with the index split, JSON-LD emission, cookie consent gate, scheduling embed, company profile and business-hours settings, SMTP and captcha settings with masked secrets, the status page
+RAM note: standard
+UI: yes
+dodApplicable: D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15
+acceptanceCriteria:
+  [BR] REQ-INT-001 / BR-INT-02: a receiver returning 500 causes retries at 1, 5, 25, 125 and 625 seconds, after which the delivery is Abandoned and the owner is alerted once.
+  [BR] REQ-INT-004 / BR-INT-04: two consecutive non-2xx responses from a demo URL mark it Down and hide the public demo button.
+  [REJECT] REQ-INT-009 / BR-INT-02: replaying a delivery that already succeeded returns 409.
+  [PERSIST] REQ-INT-001: creating a webhook endpoint writes a `WebhookEndpoints` row storing only the hash of the secret, never the secret itself.
+  [UI] REQ-INT-007: on a first visit with no consent stored, no third-party analytics request is made, and the banner choice persists for 180 days.
+minTests: 26
+minFrontendTests: 8
+phaseRoutes: ["/admin/integrations", "/admin/settings", "/book-a-call"]
+phaseSelectors: ["app-webhook-list", "app-settings-form", "app-consent-banner"]
+dbObjects: ["WebhookEndpoints", "WebhookDeliveries", "ScheduledJobRuns"]
+smoke: { protectedPath: "/api/v1/admin/webhooks", listPath: "/api/v1/admin/webhooks", createPath: "/api/v1/admin/webhooks", probeCreateBody: "{\"name\":\"__PROBE__\",\"url\":\"https://example.test/hook\",\"events\":[\"lead.created\"]}", probeTable: "WebhookEndpoints", probeColumn: "Name", deepRoute: "/admin/settings", seedEmail: "owner@softwaremanagement.test", lowPrivEmail: "sales@softwaremanagement.test" }
+Exit criteria table:
+| # | Command | Expected result | Proves REQ/NFR |
+|---|---|---|---|
+| 1 | POST a webhook endpoint, SQL `SELECT Name FROM WebhookEndpoints WHERE Name='PROBE-<nonce>'` | one row, secret stored hashed | REQ-INT-001 |
+| 2 | create a lead with a failing receiver | retries follow the documented backoff, then Abandoned | REQ-INT-001 |
+| 3 | `curl.exe http://localhost:4300/sitemap.xml` | only published URLs, no admin or API routes | NFR-SEO-02 |
+| 4 | rename a published slug, GET the old public path | 301 then 200 | NFR-SEO-03 |
+| 5 | first page load with no consent cookie, inspect network requests | zero third-party requests | NFR-PRIV-04 |
+| 6 | GET settings as Auditor | secret values masked | REQ-ADM-003 |
+Rollback plan if this phase fails: revert to the P12 tag; the public site keeps working without webhooks, and the sitemap falls back to the previously generated file.
+
+## P14: Audit, privacy operations and data lifecycle
+Goal (1 line): Everything that happened can be explained, personal data can be exported and erased, imports fill the system, and retention runs itself.
+REQ IDs delivered: REQ-ADM-005, REQ-ADM-006, REQ-ADM-007, REQ-ADM-008, REQ-ADM-009, REQ-ADM-010, REQ-ADM-011, REQ-ADM-012
+NFR IDs addressed: NFR-PRIV-01, NFR-PRIV-02, NFR-RET-01, NFR-BACKUP-01, NFR-BACKUP-02, NFR-DEP-01, NFR-MAINT-06
+Depends on: P13
+Deliverables: audit log viewer with before and after values, CSV and XLSX import with dry run and per-row errors, personal-data export, erasure with financial records preserved, the retention job, backup trigger and status, form and consent-text editing, `docs/DEPLOY.md`, `docs/ENVIRONMENT.md`, `docs/PRIVACY.md` and `docs/SECURITY.md` completed
+RAM note: import tests run at the 5,000-row limit; run them alone
+UI: yes
+dodApplicable: D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, D15
+acceptanceCriteria:
+  [BR] REQ-ADM-006 / BR-ADM-02: a 200-row import with 3 invalid rows reports 197 valid and 3 invalid with row numbers, writes nothing, and refuses to commit unless skipping invalid rows is chosen explicitly.
+  [BR] REQ-ADM-010 / BR-ADM-04: the retention job anonymises a lead with no activity for 3 years, deletes delivery logs older than 12 months, and keeps audit rows.
+  [REJECT] REQ-ADM-007 / BR-ADM-03: uploading a 6,000-row import file returns 413 before parsing.
+  [PERSIST] REQ-ADM-006: a dry run writes an `ImportJobs` row with total, valid and invalid counts and the per-row error list.
+  [UI] REQ-ADM-005: `/admin/audit` shows actor, time, action and the before and after values for an edited product.
+minTests: 16
+minFrontendTests: 6
+phaseRoutes: ["/admin/audit", "/admin/import", "/admin/privacy"]
+phaseSelectors: ["app-audit-log", "app-import-wizard", "app-privacy-tools"]
+dbObjects: ["ImportJobs"]
+smoke: { protectedPath: "/api/v1/admin/audit", listPath: "/api/v1/admin/audit", createPath: "/api/v1/admin/imports", probeCreateBody: "{\"entityType\":\"__PROBE__\",\"fileName\":\"probe.csv\",\"dryRun\":true}", probeTable: "ImportJobs", probeColumn: "EntityType", deepRoute: "/admin/audit", seedEmail: "owner@softwaremanagement.test", lowPrivEmail: "sales@softwaremanagement.test" }
+Exit criteria table:
+| # | Command | Expected result | Proves REQ/NFR |
+|---|---|---|---|
+| 1 | POST an import dry run, SQL `SELECT EntityType FROM ImportJobs WHERE EntityType='PROBE-<nonce>'` | one row | REQ-ADM-006 |
+| 2 | dry run 200 rows with 3 invalid | 197 valid, 3 invalid with row numbers, nothing written | REQ-ADM-006 |
+| 3 | upload 6,000 rows | 413 before parsing | REQ-ADM-007 |
+| 4 | erase a person, then read their invoices | personal fields anonymised, invoice and audit rows intact | REQ-ADM-009 |
+| 5 | DELETE an audit row through the API | 405 | REQ-ADM-005 |
+| 6 | age a lead 3 years, run retention | anonymised and audited | REQ-ADM-010 |
+Rollback plan if this phase fails: revert to the P13 tag; privacy operations are additive, and no earlier module depends on them.
+
+## Phase summary
+
+| Phase | Name | REQ rows | minTests | New tables | UI |
+|---|---|---|---|---|---|
+| P01 | Repo and guardrails | 0 | 0 | 0 | none |
+| P02 | Walking skeleton | 0 | 6 | 0 | yes |
+| P03 | Identity, roles, deny-by-default | 12 | 24 | 9 | yes |
+| P04 | Site content and company profile | 12 | 24 | 13 | yes |
+| P05 | Product catalogue - administration | 8 | 16 | 8 | yes |
+| P06 | Public catalogue and product pages | 7 | 14 | 1 | yes |
+| P07 | Lead capture | 12 | 24 | 8 | yes |
+| P08 | Lead pipeline | 10 | 20 | 2 | yes |
+| P09 | Customers and quotes | 14 | 28 | 5 | yes |
+| P10 | Tenants, subscriptions, invoices, payments | 10 | 20 | 5 | yes |
+| P11 | Portfolio and public API directory | 17 | 34 | 5 | yes |
+| P12 | Reporting, dashboards, notification visibility | 15 | 30 | 2 | yes |
+| P13 | Integrations, SEO plumbing, settings | 13 | 26 | 3 | yes |
+| P14 | Audit, privacy operations, data lifecycle | 8 | 16 | 1 | yes |
+| **Total** | | **138** | **282** | **62** | 1 phase with no UI |

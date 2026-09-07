@@ -1,28 +1,29 @@
 {
-    "blueprintProgress":  [
-                              "00-assumptions.md",
-                              "01-research.md"
-                          ],
-    "blueprintPass":  1,
-    "stage":  "AWAITING_APPROVAL",
-    "rootPath":  "G:/software-management",
-    "project":  "Software Management",
-    "defaultBranch":  "main",
-    "brief":  "A public marketing and sales website for the software products I build. Visitors browse a catalog of my products, open a product page (screenshots, feature list, pricing, live-demo link, download or GitHub link) and buy or request a licence; I manage the catalog, pricing, orders and customer enquiries from an admin panel. It is a product showcase plus storefront - NOT an IT software-asset or licence-management tool.",
-    "environment":  {
-                        "sqlToolPath":  "SqlClient",
-                        "availableMbAtPhaseStart":  1786,
-                        "dotnetSdk":  "10.0.400",
-                        "node":  "v24.13.0",
-                        "aspNetRuntime":  "Microsoft.AspNetCore.App 8.0.30, 9.0.19, 10.0.11",
-                        "angularCli":  "21.1.1",
-                        "git":  "git version 2.52.0.windows.1",
-                        "dbInstance":  "(localdb)\\MSSQLLocalDB",
-                        "efToolVersion":  "10.0.11",
-                        "npm":  "11.6.2"
-                    },
-    "runStatus":  "RUNNING",
-    "repoUrl":  "https://github.com/rmanish611/SoftwareManagement.git",
-    "schemaVersion":  2,
-    "requirementsSha256":  "45DA6699E50E9A87BA04760247B32D65005ED0D493E356447A57490152DF7B7E"
+  "blueprintProgress": [],
+  "blueprintPass": 2,
+  "stage": "STAGE_A_RESEARCH",
+  "rootPath": "G:/software-management",
+  "project": "Software Management",
+  "defaultBranch": "main",
+  "brief": "The public corporate website of a software company (the owner's own, initially a one-person .NET shop), built the way large IT companies present themselves: it presents the company (about, services, the technology stack it works in such as .NET/C#, Angular, SQL Server, Python), lists every software product the company builds (multi-tenant SaaS such as ERP, hospital management, billing, school and college management) with a product page each (overview, feature list, screenshots, pricing plans, live-demo link, public API/docs listing), showcases delivered projects and public APIs, and captures leads: visitors browse, open a live demo, and contact the company / request a demo / request a quote or a tenant; the owner qualifies and follows up every lead, records the tenant or subscription he sells, and manages all site content (company profile, services, tech stack, products, plans, projects, APIs, testimonials, enquiries) from an admin panel. It is a showcase + lead-generation + sales-tracking site for the company's own products - NOT an IT software-asset or licence-management tool, NOT a marketplace for other sellers, and NOT the ERP/HMS products themselves.",
+  "environment": {
+    "sqlToolPath": "SqlClient",
+    "availableMbAtPhaseStart": 1786,
+    "dotnetSdk": "10.0.400",
+    "node": "v24.13.0",
+    "aspNetRuntime": "Microsoft.AspNetCore.App 8.0.30, 9.0.19, 10.0.11",
+    "angularCli": "21.1.1",
+    "git": "git version 2.52.0.windows.1",
+    "dbInstance": "(localdb)\\MSSQLLocalDB",
+    "efToolVersion": "10.0.11",
+    "npm": "11.6.2"
+  },
+  "runStatus": "RUNNING",
+  "repoUrl": "https://github.com/rmanish611/SoftwareManagement.git",
+  "schemaVersion": 2,
+  "requirementsSha256": "",
+  "pass1Sha": "412d4e06ba28b6543992c23a18c110467c0f632e",
+  "lastUpdatedUtc": "2026-09-06T17:04:31.134Z",
+  "briefRevisedUtc": "2026-09-06T17:04:31.134Z",
+  "protocolSha256": "2E34D263B3EC9816A115C7908D429DFF32AA9EE2FF1C7A51E3BA8AAFDA47FEEA"
 }

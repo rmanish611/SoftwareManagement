@@ -1,0 +1,7 @@
+# Every change is owned by the repository owner until a second maintainer exists.
+*       @rmanish611
+
+# The frozen contract and the protocol may not change without an amendment (04a-amendments.md).
+/docs/blueprint/04-requirements.md   @rmanish611
+/docs/PROTOCOL.md                    @rmanish611
+/AGENTS.md                           @rmanish611

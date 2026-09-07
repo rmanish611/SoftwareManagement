@@ -1,0 +1,11 @@
+.editorconfig
+.github/workflows/ci.yml
+CODEOWNERS
+PROGRESS-INDEX.md
+_evidence/phase-01/gate-header.txt
+docs/BACKLOG.md
+docs/EXCEPTIONS.md
+docs/PRIVACY.md
+docs/SECURITY.md
+scripts/blueprint-metrics.mjs
+scripts/gate-h.mjs

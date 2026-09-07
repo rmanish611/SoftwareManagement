@@ -1,7 +1,79 @@
-﻿name: ci
-on: [push]
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
 jobs:
-  noop:
+  blueprint:
+    name: Blueprint consistency
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Blueprint metrics gate
+        run: node scripts/blueprint-metrics.mjs
+      - name: Cross-file consistency (Gate H)
+        run: node scripts/gate-h.mjs
+
+  backend:
+    name: Backend build and unit tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect solution
+        id: detect
+        shell: pwsh
+        run: |
+          $sln = Get-ChildItem -Path backend -Filter *.sln -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($sln) { "found=true"  | Out-File -FilePath $env:GITHUB_OUTPUT -Append; "sln=$($sln.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append }
+          else       { "found=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append; "No solution yet - P02 creates it." }
+      - uses: actions/setup-dotnet@v4
+        if: steps.detect.outputs.found == 'true'
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore local tools
+        if: steps.detect.outputs.found == 'true'
+        run: dotnet tool restore
+      - name: Restore
+        if: steps.detect.outputs.found == 'true'
+        run: dotnet restore "${{ steps.detect.outputs.sln }}"
+      - name: Build (warnings are errors)
+        if: steps.detect.outputs.found == 'true'
+        run: dotnet build "${{ steps.detect.outputs.sln }}" -c Release --no-restore -warnaserror -m:1
+      # SQL Server is not available on hosted runners, so database-backed tests
+      # carry [Trait("Category","Integration")] and run only in the local phase gate
+      # (NFR-MAINT-04). This is a documented scope boundary, not a skipped test.
+      - name: Unit tests (integration tests excluded, count printed)
+        if: steps.detect.outputs.found == 'true'
+        run: |
+          dotnet test "${{ steps.detect.outputs.sln }}" -c Release --no-build --filter "Category!=Integration"
+          dotnet test "${{ steps.detect.outputs.sln }}" -c Release --no-build --filter "Category=Integration" --list-tests
+
+  frontend:
+    name: Frontend production build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect workspace
+        id: detect
+        shell: pwsh
+        run: |
+          if (Test-Path frontend/package.json) { "found=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append }
+          else { "found=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append; "No Angular workspace yet - P02 creates it." }
+      - uses: actions/setup-node@v4
+        if: steps.detect.outputs.found == 'true'
+        with:
+          node-version: '24'
+      - name: Install from lockfile
+        if: steps.detect.outputs.found == 'true'
+        working-directory: frontend
+        run: npm ci
+      - name: Production build
+        if: steps.detect.outputs.found == 'true'
+        working-directory: frontend
+        run: npx --no-install ng build --configuration production

@@ -24,3 +24,27 @@
 - Consistency reconciliation: `GATE_H PASS failures=0 warnings=38`. The warnings are requirements whose acceptance criteria state a boundary rather than an HTTP status; every phase block still carries a [REJECT] criterion with a status code.
 - Stage set to AWAITING_APPROVAL. `requirementsSha256` is deliberately empty: it is written only in the turn the approval line arrives (Rule S7).
 - Licence findings that need an owner decision: FluentAssertions 8 is paid for commercial use (replaced with AwesomeAssertions), SixLabors.ImageSharp has revenue-threshold terms (replaced with SkiaSharp), Hangfire Core is free under LGPL but is deferred in favour of our own outbox.
+
+## P01 - Repo and guardrails - DONE (2026-09-08)
+
+Approval received (literal token `APPROVED - EXECUTE`), blueprint frozen at
+requirementsSha256 B752D3F8174396AEC9C9730B4009F6E52ACC35CF5ECE34F366EB99CFFB69B5EF,
+and all 14 phases materialized into STATE.json with all 138 requirements allocated
+exactly once.
+
+Files added: `.github/workflows/ci.yml` (blueprint checks always run; backend and frontend
+jobs detect their artifacts and skip until P02 creates them, so CI is green and honest
+rather than red and ignored), `scripts/blueprint-metrics.mjs`, `scripts/gate-h.mjs`,
+`docs/SECURITY.md`, `docs/PRIVACY.md` (the PII inventory NFR-PRIV-01 requires),
+`docs/EXCEPTIONS.md`, `docs/BACKLOG.md`, `PROGRESS-INDEX.md`, `.editorconfig`, `CODEOWNERS`.
+
+Blocker found and fixed inside the gate: the staged-index secret scan first exited 128
+because the pathspec `:!path` is not accepted by git 2.52 here. Under R-28 an erroring
+detector is a failed gate, so the detector was corrected to `:(exclude)path`, re-run clean,
+and then proved to still detect by staging a canary line containing a fake API key
+(CANARY_EXIT=0) before removing it. The check was fixed, never weakened.
+
+Earlier in the session the remote repository disappeared (push and ls-remote both returned
+"Repository not found" although a push to the same URL had succeeded minutes before). The
+run was halted per HARD STOP #1 with the state persisted and a verified git bundle written,
+and resumed once the owner recreated the repository. No work was lost.

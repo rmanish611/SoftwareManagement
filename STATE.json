@@ -36,15 +36,15 @@
   "schemaVersion": 2,
   "requirementsSha256": "B752D3F8174396AEC9C9730B4009F6E52ACC35CF5ECE34F366EB99CFFB69B5EF",
   "pass1Sha": "412d4e06ba28b6543992c23a18c110467c0f632e",
-  "lastUpdatedUtc": "2026-09-07T23:31:27.475Z",
+  "lastUpdatedUtc": "2026-09-07T23:36:49.268Z",
   "briefRevisedUtc": "2026-09-06T17:04:31.134Z",
   "protocolSha256": "2E34D263B3EC9816A115C7908D429DFF32AA9EE2FF1C7A51E3BA8AAFDA47FEEA",
   "intentLock": "Software Management is the corporate website of the owner's own software company. Its primary user is a prospective customer (an SMB owner or IT decision-maker in India first, global later) who wants to see what the company builds, open a live demo of a product such as the ERP or the hospital-management SaaS, and get in touch. The three most important jobs: (1) present the company and its product catalogue credibly, the way a large IT vendor does - company profile, services, technology stack, product pages with features, screenshots, plans, demo and API links, projects and case studies; (2) turn visitors into leads - contact, demo request, quote or tenant request - through spam-safe forms with notifications and a lead pipeline the owner works from the admin panel; (3) let the owner run the site and the sales record without a developer - CMS-style management of every public section plus recording the tenants and subscriptions sold and their lifecycle. Explicitly out of scope: licence-key delivery, a marketplace for third-party sellers, and the functionality of the SaaS products themselves.",
   "pass2Sha": "4a6bfe3c1183fc03ca72bbdecf39e6ee412f8ec8",
   "blueprintFrozen": true,
   "totalPhases": 14,
-  "currentPhase": 1,
-  "lastVerifiedPhase": 0,
+  "currentPhase": 2,
+  "lastVerifiedPhase": 1,
   "reqCount": 138,
   "mustCount": 98,
   "nfrCoverageFloor": 70,
@@ -96,14 +96,14 @@
   },
   "spawnedPids": [],
   "openBlockers": [],
-  "nextAction": "P01 B1: re-anchor from STATE.json, then create the P01 guardrail files (real ci.yml, docs/EXCEPTIONS.md, docs/BACKLOG.md, PROGRESS-INDEX.md, docs/SECURITY.md, docs/PRIVACY.md, .editorconfig, CODEOWNERS), run the D11/D12/D13/D14 gate and close the phase with a phase-01-closed tag on the remote.",
+  "nextAction": "P02 B1: re-anchor, then scaffold backend/src {Domain,Application,Infrastructure,Api} and backend/tests, the Angular 22 workspace with SSR in frontend/, Directory.Build.props with TreatWarningsAsErrors, angular.json budgets frozen at 500 KB initial and 250 KB lazy, tools/static-server.mjs, Serilog, the ProblemDetails handler and the health endpoints. Never build backend and frontend at the same time.",
   "phases": [
     {
       "id": 1,
       "name": "Repo and guardrails",
-      "status": "PENDING",
-      "startedUtc": "",
-      "finishedUtc": "",
+      "status": "DONE",
+      "startedUtc": "2026-09-07T23:30:00Z",
+      "finishedUtc": "2026-09-07T23:36:49.267Z",
       "goal": "Verify the repository skeleton created in preflight and add the files every later phase depends on.",
       "reqIds": [],
       "nfrIds": [
@@ -144,7 +144,7 @@
       ],
       "rollback": "revert the phase commit; preflight state is untouched because nothing outside `docs/` and `.github/` was written.",
       "evidenceDir": "_evidence/phase-01",
-      "gateAttempts": 0,
+      "gateAttempts": 1,
       "checkpoint": {
         "step": "",
         "stepStartedUtc": "",
@@ -155,13 +155,44 @@
         "packagesAdded": [],
         "spawnedPids": [],
         "recoveryStash": "",
-        "nextAction": "",
+        "nextAction": "P01 closed. Start P02 at B1.",
         "nextActionPrecondition": ""
       },
       "gate": {
-        "nonce": "",
-        "startedUtc": "",
-        "transcriptSha256": ""
+        "nonce": "ad618526",
+        "startedUtc": "2026-09-07T23:34:43Z",
+        "transcriptSha256": "",
+        "stubScan": {
+          "hits": 0,
+          "emptyCatch": 0,
+          "weakTests": 0,
+          "feBanned": 0,
+          "approvedExceptions": 0
+        },
+        "secretScan": {
+          "exit": 1,
+          "clean": true,
+          "detectorCanaryPassed": true,
+          "firstRunBrokenExit": 128,
+          "fix": "pathspec :!path replaced with :(exclude)path per R-28"
+        },
+        "git": {
+          "headSha": "f5be7964dfbd88e357cd2702cce50a93bbce229d",
+          "remoteSha": "f5be7964dfbd88e357cd2702cce50a93bbce229d",
+          "match": true,
+          "porcelainClean": true,
+          "divergence": "0 0",
+          "tag": "phase-01-gate",
+          "tagOnRemote": true
+        },
+        "backup": {
+          "zip": "G:_backupssoftware-managementsrc-phase-01-20260908-050601.zip",
+          "bytes": 286395,
+          "sha256": "AE0D5CD814E9612A022F9BE653E7D428C2AE027D848EB2F9782747D0157BAD4E",
+          "entries": 64,
+          "bundleVerify": "okay",
+          "verifiedUtc": "2026-09-07T23:36:49.268Z"
+        }
       },
       "errorBudget": {
         "signatures": {}

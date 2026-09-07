@@ -1,7 +1,20 @@
 {
-  "blueprintProgress": [],
+  "blueprintProgress": [
+    "00-assumptions.md",
+    "01-research.md",
+    "02-domain.md",
+    "03-data-model.md",
+    "04-requirements.md",
+    "05-nfr.md",
+    "06-authz.md",
+    "07-decisions.md",
+    "08-environment.md",
+    "09-phase-plan.md",
+    "10-verification-log.md",
+    "README.md"
+  ],
   "blueprintPass": 2,
-  "stage": "STAGE_A_RESEARCH",
+  "stage": "AWAITING_APPROVAL",
   "rootPath": "G:/software-management",
   "project": "Software Management",
   "defaultBranch": "main",
@@ -23,8 +36,63 @@
   "schemaVersion": 2,
   "requirementsSha256": "",
   "pass1Sha": "412d4e06ba28b6543992c23a18c110467c0f632e",
-  "lastUpdatedUtc": "2026-09-07T21:51:24.124Z",
+  "lastUpdatedUtc": "2026-09-07T23:23:39.242Z",
   "briefRevisedUtc": "2026-09-06T17:04:31.134Z",
   "protocolSha256": "2E34D263B3EC9816A115C7908D429DFF32AA9EE2FF1C7A51E3BA8AAFDA47FEEA",
-  "intentLock": "Software Management is the corporate website of the owner's own software company. Its primary user is a prospective customer (an SMB owner or IT decision-maker in India first, global later) who wants to see what the company builds, open a live demo of a product such as the ERP or the hospital-management SaaS, and get in touch. The three most important jobs: (1) present the company and its product catalogue credibly, the way a large IT vendor does - company profile, services, technology stack, product pages with features, screenshots, plans, demo and API links, projects and case studies; (2) turn visitors into leads - contact, demo request, quote or tenant request - through spam-safe forms with notifications and a lead pipeline the owner works from the admin panel; (3) let the owner run the site and the sales record without a developer - CMS-style management of every public section plus recording the tenants and subscriptions sold and their lifecycle. Explicitly out of scope: licence-key delivery, a marketplace for third-party sellers, and the functionality of the SaaS products themselves."
+  "intentLock": "Software Management is the corporate website of the owner's own software company. Its primary user is a prospective customer (an SMB owner or IT decision-maker in India first, global later) who wants to see what the company builds, open a live demo of a product such as the ERP or the hospital-management SaaS, and get in touch. The three most important jobs: (1) present the company and its product catalogue credibly, the way a large IT vendor does - company profile, services, technology stack, product pages with features, screenshots, plans, demo and API links, projects and case studies; (2) turn visitors into leads - contact, demo request, quote or tenant request - through spam-safe forms with notifications and a lead pipeline the owner works from the admin panel; (3) let the owner run the site and the sales record without a developer - CMS-style management of every public section plus recording the tenants and subscriptions sold and their lifecycle. Explicitly out of scope: licence-key delivery, a marketplace for third-party sellers, and the functionality of the SaaS products themselves.",
+  "pass2Sha": "4a6bfe3c1183fc03ca72bbdecf39e6ee412f8ec8",
+  "blueprintFrozen": false,
+  "totalPhases": 14,
+  "currentPhase": 0,
+  "lastVerifiedPhase": 0,
+  "reqCount": 138,
+  "mustCount": 98,
+  "nfrCoverageFloor": 70,
+  "bundleBudgetsKb": {
+    "initial": 500,
+    "lazy": 250
+  },
+  "anonAllowlist": [
+    "/health",
+    "/health/live",
+    "/health/ready",
+    "/api/v1/auth/login",
+    "/api/v1/auth/refresh"
+  ],
+  "metrics": {
+    "assumptions": 30,
+    "sources": 21,
+    "capabilities": 65,
+    "actors": 11,
+    "businessRules": 72,
+    "exceptionFlows": 73,
+    "entities": 60,
+    "requirements": 138,
+    "nfrs": 61,
+    "authzRows": 72,
+    "adrs": 23,
+    "phases": 14,
+    "mustPercent": 71
+  },
+  "paths": {
+    "sln": "backend/SoftwareManagement.sln",
+    "apiCsproj": "backend/src/SoftwareManagement.Api/SoftwareManagement.Api.csproj",
+    "apiDll": "_publish/api/SoftwareManagement.Api.dll",
+    "infra": "backend/src/SoftwareManagement.Infrastructure",
+    "testsDir": "backend/tests",
+    "frontend": "frontend",
+    "distDir": "frontend/dist/software-management/browser",
+    "dbName": "SoftwareManagementDb",
+    "apiPort": 5199,
+    "staticPort": 4300
+  },
+  "approval": {
+    "tokenSeen": "",
+    "receivedAtUtc": "",
+    "blueprintVersion": 2,
+    "requirementsSha256": ""
+  },
+  "spawnedPids": [],
+  "openBlockers": [],
+  "nextAction": "Wait for the standalone line \"APPROVED - EXECUTE\". On receipt: write the approval record, freeze requirementsSha256, materialize the 14 phase blocks from 09-phase-plan.md into STATE.json.phases[], commit and push, then start P01 at B1."
 }

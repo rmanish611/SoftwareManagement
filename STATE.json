@@ -39,7 +39,7 @@
   "schemaVersion": 2,
   "requirementsSha256": "B752D3F8174396AEC9C9730B4009F6E52ACC35CF5ECE34F366EB99CFFB69B5EF",
   "pass1Sha": "412d4e06ba28b6543992c23a18c110467c0f632e",
-  "lastUpdatedUtc": "2026-09-08T02:22:38.981Z",
+  "lastUpdatedUtc": "2026-09-08T02:23:55.336Z",
   "briefRevisedUtc": "2026-09-06T17:04:31.134Z",
   "protocolSha256": "2E34D263B3EC9816A115C7908D429DFF32AA9EE2FF1C7A51E3BA8AAFDA47FEEA",
   "intentLock": "Software Management is the corporate website of the owner's own software company. Its primary user is a prospective customer (an SMB owner or IT decision-maker in India first, global later) who wants to see what the company builds, open a live demo of a product such as the ERP or the hospital-management SaaS, and get in touch. The three most important jobs: (1) present the company and its product catalogue credibly, the way a large IT vendor does - company profile, services, technology stack, product pages with features, screenshots, plans, demo and API links, projects and case studies; (2) turn visitors into leads - contact, demo request, quote or tenant request - through spam-safe forms with notifications and a lead pipeline the owner works from the admin panel; (3) let the owner run the site and the sales record without a developer - CMS-style management of every public section plus recording the tenants and subscriptions sold and their lifecycle. Explicitly out of scope: licence-key delivery, a marketplace for third-party sellers, and the functionality of the SaaS products themselves.",
@@ -1040,6 +1040,24 @@
             "backend/src/SoftwareManagement.Domain/Identity/LoginAttempt.cs"
           ],
           "canaryDetected": true
+        },
+        "git": {
+          "headSha": "a099b63b75cefff0765bdeb02765aaca8e3edc06",
+          "remoteSha": "a099b63b75cefff0765bdeb02765aaca8e3edc06",
+          "match": true,
+          "divergence": "0 0",
+          "tag": "phase-05-closed",
+          "tagOnRemote": true,
+          "porcelainClean": true
+        },
+        "backup": {
+          "zip": "G:/_backups/software-management/src-phase-05-20260908-075339.zip",
+          "bytes": 842390,
+          "sha256": "421B75669656553CD4E0B92B8069828B6B705ACCF51F52D002CAD9E8AF607C2A",
+          "entries": 301,
+          "bundle": "G:/_backups/software-management/phase-05.bundle",
+          "bundleVerify": "okay",
+          "verifiedUtc": "2026-09-08T02:23:55.335Z"
         }
       },
       "errorBudget": {

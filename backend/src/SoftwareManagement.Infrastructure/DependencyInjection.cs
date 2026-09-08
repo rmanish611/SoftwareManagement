@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SoftwareManagement.Application.Content;
 using SoftwareManagement.Application.Security;
 using SoftwareManagement.Domain.Common;
 using SoftwareManagement.Domain.Identity;
+using SoftwareManagement.Infrastructure.Content;
 using SoftwareManagement.Infrastructure.Persistence;
 using SoftwareManagement.Infrastructure.Security;
 using SoftwareManagement.Infrastructure.Time;
@@ -71,6 +73,12 @@ public static class DependencyInjection
         services.AddScoped<TokenFactory>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAdminUserService, AdminUserService>();
+        services.AddSingleton<IFileStorage, LocalFileStorage>();
+        services.AddSingleton<IFileTypeInspector, MagicNumberFileTypeInspector>();
+        services.AddSingleton<IImageProcessor, SkiaImageProcessor>();
+        services.AddScoped<ISlugService, SlugService>();
+        services.AddScoped<IEditorTimeZone, EditorTimeZone>();
+        services.AddScoped<IPublishingService, PublishingService>();
         services.AddScoped<DatabaseSeeder>();
 
         return services;

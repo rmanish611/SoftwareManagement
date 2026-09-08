@@ -14,12 +14,20 @@ const distDir = process.argv[2];
 const initialCeilingKb = Number(process.argv[3] ?? 500);
 const lazyCeilingKb = Number(process.argv[4] ?? 250);
 
-if (!fs.existsSync(path.join(distDir, 'index.html'))) {
-  console.log(`GATE FAIL D10: no index.html under ${distDir}`);
+// With server-side rendering there is no prerendered index.html: the server produces the HTML per
+// request and the build emits index.csr.html, the client-side shell used when hydration takes over.
+// Either file tells us which assets load on first paint, which is what the ceiling is about.
+const indexCandidates = ['index.html', 'index.csr.html']
+  .map((name) => path.join(distDir, name))
+  .filter((file) => fs.existsSync(file));
+
+if (indexCandidates.length === 0) {
+  console.log(`GATE FAIL D10: no index.html or index.csr.html under ${distDir}`);
   process.exit(1);
 }
 
-const indexHtml = fs.readFileSync(path.join(distDir, 'index.html'), 'utf8');
+const indexHtml = fs.readFileSync(indexCandidates[0], 'utf8');
+console.log(`INDEX_FILE=${path.basename(indexCandidates[0])}`);
 const jsFiles = fs.readdirSync(distDir).filter((f) => f.endsWith('.js'));
 const cssFiles = fs.readdirSync(distDir).filter((f) => f.endsWith('.css'));
 

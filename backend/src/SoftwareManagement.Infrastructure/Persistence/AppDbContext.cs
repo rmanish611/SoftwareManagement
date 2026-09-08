@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SoftwareManagement.Domain.Audit;
 using SoftwareManagement.Domain.Common;
+using SoftwareManagement.Domain.Content;
 using SoftwareManagement.Domain.Identity;
 using SoftwareManagement.Domain.Settings;
 
@@ -28,6 +29,32 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IClock clock)
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
+
+    public DbSet<Page> Pages => Set<Page>();
+
+    public DbSet<PageSection> PageSections => Set<PageSection>();
+
+    public DbSet<SeoMetadata> SeoMetadata => Set<SeoMetadata>();
+
+    public DbSet<Redirect> Redirects => Set<Redirect>();
+
+    public DbSet<ContentVersion> ContentVersions => Set<ContentVersion>();
+
+    public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
+
+    public DbSet<Service> Services => Set<Service>();
+
+    public DbSet<Technology> Technologies => Set<Technology>();
+
+    public DbSet<ServiceTechnology> ServiceTechnologies => Set<ServiceTechnology>();
+
+    public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
+
+    public DbSet<Testimonial> Testimonials => Set<Testimonial>();
+
+    public DbSet<NavigationItem> NavigationItems => Set<NavigationItem>();
+
+    public DbSet<Announcement> Announcements => Set<Announcement>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

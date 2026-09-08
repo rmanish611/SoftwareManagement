@@ -14,6 +14,16 @@ export const routes: Routes = [
     title: 'Software Management',
   },
   {
+    path: 'about',
+    loadComponent: () => import('./public/about/about').then((m) => m.About),
+    title: 'About us',
+  },
+  {
+    path: 'services',
+    loadComponent: () => import('./public/services/services-page').then((m) => m.ServicesPage),
+    title: 'Services',
+  },
+  {
     path: 'admin/login',
     loadComponent: () => import('./admin/login/login').then((m) => m.Login),
     title: 'Sign in',

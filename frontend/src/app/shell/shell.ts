@@ -24,6 +24,8 @@ import { RouterLink, RouterOutlet } from '@angular/router';
 
         <nav class="shell__nav" aria-label="Primary">
           <a routerLink="/">Home</a>
+          <a routerLink="/services">Services</a>
+          <a routerLink="/about">About</a>
         </nav>
       </header>
 

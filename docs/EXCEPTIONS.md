@@ -12,6 +12,16 @@ Patterns that are never exceptable, whatever the justification: `NotImplementedE
 |---|---|---|---|---|---|
 | EXC-01 | `backend/src/SoftwareManagement.Infrastructure/Persistence/Migrations/20260907235012_InitialCreate.Designer.cs:20` and `.../AppDbContextModelSnapshot.cs:17` | `#pragma warning disable 612, 618` | Emitted by EF Core itself in generated migration output. An applied migration is frozen: a mistake is corrected by a new migration, never by hand-editing the old one, so the line cannot be removed without editing generated code that the tool will rewrite anyway. The protocol's own carve-out for generated migrations covers exactly this case. | P02 | Permanent while EF Core emits it |
 
+## Secret-scan pathspec exclusions
+
+The secret scan's pattern matches `Password = "value"`. One file legitimately contains that shape
+without holding a secret, so that single file is excluded by pathspec. The pattern itself is never
+relaxed, because a weaker pattern would stop finding real secrets everywhere else.
+
+| File | Line | Why it matches | Why it is not a secret |
+|---|---|---|---|
+| `backend/src/SoftwareManagement.Domain/Identity/LoginAttempt.cs` | 31 | `public const string WrongPassword = "wrong_password";` | It is the audit-log reason code recorded against a failed sign-in. The value is written to the `LoginAttempts` table and never returned to a caller; it grants nothing. |
+
 Count in force: 1 of 5.
 
 **How the scan treats this.** The detector is not edited and the pattern list is not shortened.

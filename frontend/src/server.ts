@@ -10,22 +10,27 @@ import { join } from 'node:path';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
 
 /**
- * Example Express Rest API endpoints can be defined here.
- * Uncomment and define endpoints as necessary.
+ * Angular refuses to render a request whose Host header it does not recognise, which is what stops
+ * a server-side request-forgery attack from making the renderer fetch a URL of the attacker's
+ * choosing. That means every hostname the site is actually served on has to be listed.
  *
- * Example:
- * ```ts
- * app.get('/api/{*splat}', (req, res) => {
- *   // Handle API request
- * });
- * ```
+ * The list comes from configuration so a deployment does not need a rebuild: set
+ * `ALLOWED_HOSTS=softwaremanagement.example,www.softwaremanagement.example`. The localhost entries
+ * are the ones the phase gate and a developer use.
  */
+const allowedHosts = (process.env['ALLOWED_HOSTS'] ?? '')
+  .split(',')
+  .map((host) => host.trim())
+  .filter(Boolean)
+  .concat(['localhost', '127.0.0.1', 'localhost:4300', 'localhost:4000', 'localhost:4399']);
+
+const angularApp = new AngularNodeAppEngine({ allowedHosts });
 
 /**
- * Serve static files from /browser
+ * Serve the built files. Hashed assets are immutable, so a long cache is safe; index.html is not
+ * served from here, because every route is rendered.
  */
 app.use(
   express.static(browserDistFolder, {
@@ -36,21 +41,33 @@ app.use(
 );
 
 /**
- * Handle all other requests by rendering the Angular application.
+ * A request for a file that does not exist is a 404, not a rendered page.
+ *
+ * Without this, a missing `main-abc123.js` answers 200 with HTML, the browser tries to execute
+ * that HTML as JavaScript, and the real fault, a bad asset reference, is hidden behind a page that
+ * looks like it loaded. Anything with a file extension other than `.html` is a static asset: if
+ * express.static did not serve it, it is not there.
  */
+const staticAssetPattern = /\.[a-z0-9]+$/i;
+
+app.use((req, res, next) => {
+  const path = req.path;
+  if (staticAssetPattern.test(path) && !path.endsWith('.html')) {
+    res.status(404).type('text/plain').send('not found');
+    return;
+  }
+
+  next();
+});
+
+/** Render everything else with Angular. */
 app.use((req, res, next) => {
   angularApp
     .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
+    .then((response) => (response ? writeResponseToNodeResponse(response, res) : next()))
     .catch(next);
 });
 
-/**
- * Start the server if this module is the main entry point, or it is ran via PM2.
- * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
- */
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
   const port = process.env['PORT'] || 4000;
   app.listen(port, (error) => {
@@ -62,7 +79,5 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
   });
 }
 
-/**
- * Request handler used by the Angular CLI (for dev-server and during build) or Firebase Cloud Functions.
- */
+/** Request handler used by the Angular CLI during development and by serverless hosts. */
 export const reqHandler = createNodeRequestHandler(app);

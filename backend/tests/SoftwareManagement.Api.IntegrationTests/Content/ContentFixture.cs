@@ -24,6 +24,7 @@ public sealed class ContentFixture : WebApplicationFactory<Program>, IAsyncLifet
     public const string OwnerEmail = "owner@softwaremanagement.test";
     public const string EditorEmail = "editor@softwaremanagement.test";
     public const string SalesEmail = "sales@softwaremanagement.test";
+    public const string AuditorEmail = "auditor@softwaremanagement.test";
     public const string Password = "Fixture-Pass-2026";
 
     public ContentFixture()
@@ -54,6 +55,7 @@ public sealed class ContentFixture : WebApplicationFactory<Program>, IAsyncLifet
         var users = scope.ServiceProvider.GetRequiredService<UserManager<AdminUser>>();
         await EnsureAsync(users, EditorEmail, "Content Editor", RoleNames.Editor);
         await EnsureAsync(users, SalesEmail, "Sales Person", RoleNames.Sales);
+        await EnsureAsync(users, AuditorEmail, "Read Only Auditor", RoleNames.Auditor);
 
         await db.LoginAttempts.ExecuteDeleteAsync();
     }

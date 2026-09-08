@@ -38,6 +38,21 @@ export const routes: Routes = [
         loadComponent: () => import('./admin/dashboard/dashboard').then((m) => m.Dashboard),
         title: 'Dashboard',
       },
+      {
+        path: 'products',
+        loadComponent: () => import('./admin/products/product-list').then((m) => m.ProductList),
+        title: 'Products',
+      },
+      {
+        path: 'products/new',
+        loadComponent: () => import('./admin/products/product-editor').then((m) => m.ProductEditor),
+        title: 'New product',
+      },
+      {
+        path: 'products/:id',
+        loadComponent: () => import('./admin/products/product-editor').then((m) => m.ProductEditor),
+        title: 'Product',
+      },
     ],
   },
   { path: '**', redirectTo: '' },

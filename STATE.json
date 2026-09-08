@@ -39,15 +39,15 @@
   "schemaVersion": 2,
   "requirementsSha256": "B752D3F8174396AEC9C9730B4009F6E52ACC35CF5ECE34F366EB99CFFB69B5EF",
   "pass1Sha": "412d4e06ba28b6543992c23a18c110467c0f632e",
-  "lastUpdatedUtc": "2026-09-08T01:42:07.306Z",
+  "lastUpdatedUtc": "2026-09-08T02:22:38.981Z",
   "briefRevisedUtc": "2026-09-06T17:04:31.134Z",
   "protocolSha256": "2E34D263B3EC9816A115C7908D429DFF32AA9EE2FF1C7A51E3BA8AAFDA47FEEA",
   "intentLock": "Software Management is the corporate website of the owner's own software company. Its primary user is a prospective customer (an SMB owner or IT decision-maker in India first, global later) who wants to see what the company builds, open a live demo of a product such as the ERP or the hospital-management SaaS, and get in touch. The three most important jobs: (1) present the company and its product catalogue credibly, the way a large IT vendor does - company profile, services, technology stack, product pages with features, screenshots, plans, demo and API links, projects and case studies; (2) turn visitors into leads - contact, demo request, quote or tenant request - through spam-safe forms with notifications and a lead pipeline the owner works from the admin panel; (3) let the owner run the site and the sales record without a developer - CMS-style management of every public section plus recording the tenants and subscriptions sold and their lifecycle. Explicitly out of scope: licence-key delivery, a marketplace for third-party sellers, and the functionality of the SaaS products themselves.",
   "pass2Sha": "4a6bfe3c1183fc03ca72bbdecf39e6ee412f8ec8",
   "blueprintFrozen": true,
   "totalPhases": 14,
-  "currentPhase": 5,
-  "lastVerifiedPhase": 4,
+  "currentPhase": 6,
+  "lastVerifiedPhase": 5,
   "reqCount": 138,
   "mustCount": 98,
   "nfrCoverageFloor": 70,
@@ -99,7 +99,7 @@
   },
   "spawnedPids": [],
   "openBlockers": [],
-  "nextAction": "P05 B1: re-anchor, then build the product catalogue administration: products, categories, features, screenshots, pricing plans with the single-recommended-plan rule and the yearly-price sanity check, plan features, demo environments with credentials that never reach a log, and the admin screens for all of it.",
+  "nextAction": "P06 B1: re-anchor, then build the public catalogue and product pages: the industry-filtered catalogue, the product page with its features, screenshots, plan comparison and demo button, the publish gate that refuses a product short of three features, one screenshot and one plan, and the search-engine metadata for each page.",
   "phases": [
     {
       "id": 1,
@@ -844,7 +844,7 @@
     {
       "id": 5,
       "name": "Product catalogue - administration",
-      "status": "PENDING",
+      "status": "DONE",
       "startedUtc": "",
       "finishedUtc": "",
       "goal": "Products, categories, features, screenshots, plans and demo links can be created and maintained correctly.",
@@ -933,7 +933,7 @@
       ],
       "rollback": "revert to the P04 tag and drop the catalogue migration; content and identity are unaffected.",
       "evidenceDir": "_evidence/phase-05",
-      "gateAttempts": 0,
+      "gateAttempts": 1,
       "checkpoint": {
         "step": "",
         "stepStartedUtc": "",
@@ -944,13 +944,103 @@
         "packagesAdded": [],
         "spawnedPids": [],
         "recoveryStash": "",
-        "nextAction": "",
+        "nextAction": "P05 closed. Start P06 at B1.",
         "nextActionPrecondition": ""
       },
       "gate": {
-        "nonce": "",
-        "startedUtc": "",
-        "transcriptSha256": ""
+        "nonce": "p05gate",
+        "build": {
+          "exit": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "test": {
+          "exit": 0,
+          "total": 129,
+          "passed": 129,
+          "failed": 0,
+          "skipped": 0,
+          "frontend": 47,
+          "prev": 110,
+          "sacRetries": 0
+        },
+        "coverage": {
+          "line": 75.6,
+          "byPackage": {
+            "Application": 95.5,
+            "Domain": 83.3,
+            "Infrastructure": 82.4,
+            "Api": 68.2
+          }
+        },
+        "database": {
+          "exit": 0,
+          "migrationId": "20260908015659_AddProductCatalog",
+          "tableCount": 35,
+          "pendingModelChanges": false,
+          "builtFromEmpty": "SoftwareManagementDb_GateP05",
+          "seededCategories": 4
+        },
+        "publish": {
+          "exit": 0,
+          "dllBytes": 312832
+        },
+        "smokeApi": {
+          "health": 200,
+          "anonRoutesChecked": 4,
+          "anonFailures": 0,
+          "anonPublicCatalogue": 200,
+          "loginStatus": 200,
+          "probePostStatus": 201,
+          "duplicateSlugStatus": 409,
+          "duplicateSlugCode": "SLUG_TAKEN",
+          "implausibleYearlyStatus": 422,
+          "recommendedPlanCount": 1,
+          "dbProbeWrite": "OK",
+          "dbProbeRead": "OK",
+          "stoppedClean": true
+        },
+        "frontendBuild": {
+          "exit": 0,
+          "lint": "clean",
+          "initialKb": 290.9,
+          "lazyChunks": 11,
+          "largestLazyKb": 50.4,
+          "bundleBudgets": "PASS",
+          "renderMode": "server-per-request; admin client-rendered"
+        },
+        "frontendRender": {
+          "indexStatus": 200,
+          "appRootFound": true,
+          "about": 200,
+          "services": 200,
+          "adminLogin": 200,
+          "adminProducts": 200,
+          "adminProductsNew": 200,
+          "missingAsset404": true,
+          "routesChecked": 5,
+          "selectorsInBuild": [
+            "app-product-list",
+            "app-product-editor",
+            "app-plan-editor"
+          ]
+        },
+        "stubScan": {
+          "hits": 0,
+          "emptyCatch": 0,
+          "weakTests": 0,
+          "feBanned": 0,
+          "weakFeSpecs": 0,
+          "approvedExceptions": 0
+        },
+        "secretScan": {
+          "exit": 1,
+          "clean": true,
+          "pathspecExclusions": [
+            "backend/src/SoftwareManagement.Domain/Identity/LoginAttempt.cs"
+          ],
+          "canaryDetected": true
+        }
       },
       "errorBudget": {
         "signatures": {}

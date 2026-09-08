@@ -106,6 +106,7 @@ export class AdminShell {
 
   private readonly navigation = [
     { path: '/admin', label: 'Dashboard', permission: 'dashboard.read' },
+    { path: '/admin/products', label: 'Products', permission: 'catalog.product.read' },
     { path: '/admin/users', label: 'Users', permission: 'admin.user.read' },
     { path: '/admin/login-attempts', label: 'Sign-in log', permission: 'admin.audit.read' },
   ];

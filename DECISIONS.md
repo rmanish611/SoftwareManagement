@@ -129,3 +129,41 @@ many retries the environment needed, and the run fails loudly if the block persi
   already in the record.
 - If the owner later chooses to exclude the repository from Smart App Control himself, the retry
   simply never fires.
+
+## ADR-R04 - Sales reads the product catalogue; the phase plan's exit line was wrong
+
+**Status.** Accepted, P05, 2026-09-08.
+
+**Context.** The P05 exit criteria table says: "Sales token against `/api/v1/admin/products` => 403".
+The first authorization test written against that line failed, because the endpoint answered 200.
+The frozen authorization matrix explains why: AZ-12 grants `catalog.product.read` to Anonymous
+(published only), Editor, Sales, Auditor and Owner, and AZ-13 and AZ-18 withhold the product and
+plan writes from Sales. The role map in `RolePermissionMap` already matched the matrix.
+
+The two documents disagree, and one of them had to give.
+
+**Options considered.**
+
+1. **Change the code so Sales gets 403 on the read.** Rejected. It would contradict AZ-12, and it
+   would be wrong on its own terms: Sales quotes products to prospects, so a salesperson who cannot
+   open the catalogue cannot do the job. It would also have to be undone in P09, where a quote line
+   item names a product.
+2. **Weaken or delete the failing assertion.** Rejected outright. R-13 forbids it, and a phase that
+   proves nothing about authorization is worse than one that proves the wrong thing loudly.
+3. **Treat the authorization matrix as binding and correct the assertion.** Chosen.
+
+**Decision.** `06-authz.md` is the authority on who may do what. The P05 gate asserts both halves of
+the rule rather than one: Sales gets 200 on `GET /api/v1/admin/products` (AZ-12) and 403 on both
+`POST /api/v1/admin/products` (AZ-13) and `POST .../plans` (AZ-18), and the database is checked
+afterwards to confirm the refused write left nothing behind. The demo-credentials test follows the
+same matrix: AZ-19 grants the credentials to Owner, Editor and Sales, and withholds them from the
+Auditor, which is the refusal that test now asserts.
+
+**Consequences.**
+
+- The exit criteria table in `09-phase-plan.md` keeps a line that is looser than the matrix. It is
+  left as written, because the phase plan is frozen; this record says which document wins.
+- A role that can do neither half is now as visible a failure as one that can do both, because both
+  are asserted in the same test.
+- `ContentFixture` seeds an Auditor alongside the Owner, Editor and Sales, so a read-only role can
+  be asserted directly rather than inferred.

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SoftwareManagement.Domain.Audit;
+using SoftwareManagement.Domain.Catalog;
 using SoftwareManagement.Domain.Common;
 using SoftwareManagement.Domain.Content;
 using SoftwareManagement.Domain.Identity;
@@ -55,6 +56,22 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IClock clock)
     public DbSet<NavigationItem> NavigationItems => Set<NavigationItem>();
 
     public DbSet<Announcement> Announcements => Set<Announcement>();
+
+    public DbSet<Product> Products => Set<Product>();
+
+    public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
+
+    public DbSet<ProductFeature> ProductFeatures => Set<ProductFeature>();
+
+    public DbSet<ProductScreenshot> ProductScreenshots => Set<ProductScreenshot>();
+
+    public DbSet<PricingPlan> PricingPlans => Set<PricingPlan>();
+
+    public DbSet<PlanFeature> PlanFeatures => Set<PlanFeature>();
+
+    public DbSet<DemoEnvironment> DemoEnvironments => Set<DemoEnvironment>();
+
+    public DbSet<FaqItem> FaqItems => Set<FaqItem>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

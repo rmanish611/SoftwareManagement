@@ -171,3 +171,44 @@ The staged-index scan flagged `WrongPassword = "wrong_password"`, an audit reaso
 the protocol, exactly that one file is excluded by pathspec and the exclusion is documented in
 `docs/EXCEPTIONS.md`; the pattern itself was not relaxed, and a canary line proved the detector
 still fires.
+
+## P05 - Product catalogue administration - DONE (2026-09-08)
+
+Products, industries, features with a reorder that cannot leave a gap, screenshots, pricing plans
+with the one-recommended-plan rule enforced by a filtered unique index, plan feature matrices,
+demo environments whose credentials never travel with an ordinary read, the admin screens for all
+of it, and a public catalogue reader filtered by industry. 129 backend and 47 frontend tests pass,
+coverage 75.6%.
+
+### Two defects the tests caught, both real
+
+1. **Every plan write returned 500.** The connection is configured to retry transient faults, and a
+   transaction the code opens itself must run inside that retry strategy; without it EF Core refuses
+   the transaction outright. The one-recommended-plan rule needs a transaction, so the whole pricing
+   feature was dead on arrival. It now runs inside `CreateExecutionStrategy().ExecuteAsync`, which
+   is also the only correct answer: a retry that resumed half a rolled-back transaction would be
+   worse than the failure.
+2. **A shortfall marker existed only in CSS.** The product list flagged a product below the
+   publishing thresholds with a `::after` pseudo-element, which is not in the document and is not
+   reliably announced. The word is real text in the table now (NFR-ACC-03).
+
+### One conflict in the documents, resolved and recorded
+
+The P05 exit table predicted 403 for a Sales token on the product list; the frozen authorization
+matrix grants Sales that read (AZ-12) and withholds only the writes (AZ-13, AZ-18). The matrix wins.
+The test asserts both halves rather than one, and checks the database afterwards to confirm the
+refused write left nothing behind. See ADR-R04 and ASM-10.
+
+### The rules that live in the database, not only in code
+
+A filtered unique index makes two recommended plans impossible rather than merely unlikely, and
+three check constraints reject a negative price, a zero price that does not declare itself free, a
+plan with no seats, and a "limited" feature with no limit. Each has a test that provokes it through
+the API.
+
+### Two gate scripts, so the evidence can be re-run
+
+`scripts/phase-smoke.ps1` and `scripts/render-proof.ps1` replace the ad-hoc shell of earlier phases.
+The render proof counts the routes it actually reached and fails if that number is short of the
+number asked for: the first version of it printed PASS after a PowerShell reserved-variable error
+skipped every route check, which is exactly the failure a gate script must not have.

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SoftwareManagement.Application.Security;
+using SoftwareManagement.Domain.Catalog;
 using SoftwareManagement.Domain.Identity;
 using SoftwareManagement.Domain.Settings;
 
@@ -52,6 +53,7 @@ public sealed partial class DatabaseSeeder(
         await SeedPermissionsAsync(cancellationToken).ConfigureAwait(false);
         await SeedRolePermissionsAsync(cancellationToken).ConfigureAwait(false);
         await SeedSettingsAsync(cancellationToken).ConfigureAwait(false);
+        await SeedProductCategoriesAsync(cancellationToken).ConfigureAwait(false);
         await SeedOwnerAsync().ConfigureAwait(false);
     }
 
@@ -180,6 +182,49 @@ public sealed partial class DatabaseSeeder(
         }
     }
 
+    /// <summary>
+    /// The industries the company sells into. These are the buyer's starting point: someone runs a
+    /// hospital, not "a product", so the catalogue is grouped by the job rather than by our
+    /// internal naming (S-10). Categories are seeded because the first product cannot be created
+    /// without one, and an empty category list would make a fresh install look broken.
+    /// </summary>
+    private async Task SeedProductCategoriesAsync(CancellationToken cancellationToken)
+    {
+        (string Slug, string Name, string Description, string IconKey, int SortOrder)[] defaults =
+        [
+            ("erp", "Enterprise resource planning", "Finance, inventory, purchase and reporting for a whole business in one system.", "erp", 1),
+            ("healthcare", "Hospital and clinic", "Patient records, appointments, pharmacy, laboratory and billing for care providers.", "healthcare", 2),
+            ("billing", "Billing and invoicing", "GST invoicing, subscriptions, receipts and collections for service businesses.", "billing", 3),
+            ("education", "School and college", "Admissions, attendance, examinations, fees and results for education institutions.", "education", 4),
+        ];
+
+        var existing = await _dbContext.ProductCategories
+            .Select(c => c.Slug)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var missing = defaults
+            .Where(d => !existing.Contains(d.Slug, StringComparer.Ordinal))
+            .Select(d => new ProductCategory
+            {
+                Id = Guid.NewGuid(),
+                Slug = d.Slug,
+                Name = d.Name,
+                Description = d.Description,
+                IconKey = d.IconKey,
+                SortOrder = d.SortOrder,
+                IsPublished = true,
+                CreatedBy = "seed",
+            })
+            .ToList();
+
+        if (missing.Count > 0)
+        {
+            _dbContext.ProductCategories.AddRange(missing);
+            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            LogSeededProductCategories(_logger, missing.Count);
+        }
+    }
+
     private async Task SeedOwnerAsync()
     {
         var email = _configuration["Seed:OwnerEmail"] ?? "owner@softwaremanagement.test";
@@ -225,6 +270,9 @@ public sealed partial class DatabaseSeeder(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Seeded {count} permissions.")]
     private static partial void LogSeededPermissions(ILogger logger, int count);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Seeded {count} product categories.")]
+    private static partial void LogSeededProductCategories(ILogger logger, int count);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Seeded {count} role-permission assignments.")]
     private static partial void LogSeededRolePermissions(ILogger logger, int count);

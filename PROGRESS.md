@@ -95,3 +95,37 @@ with the per-lazy-chunk ceiling enforced by a script over the real build output.
 - **Windows Smart App Control briefly blocked the test host from loading the API assembly**
   (`An Application Control policy has blocked this file`). A clean rebuild of that project
   resolved it; no security setting was changed.
+
+## P03 - Identity, roles and deny-by-default - DONE (2026-09-08)
+
+ASP.NET Core Identity with Guid keys, a 70-entry permission catalogue seeded from the approved
+authorization matrix and mapped to four roles, JWT access tokens that carry the permissions, and
+rotating refresh tokens whose reuse revokes the whole chain. Lockout, password reset, user
+administration with last-owner protection, an append-only audit trail, and the Angular sign-in
+screen and admin shell. 80 backend and 23 frontend tests pass; every requirement has at least two
+tests naming it.
+
+### Two security defects the tests caught
+
+1. **The lockout was checked after the account lookup.** An address that does not exist returned
+   early, so it was never throttled: an attacker could guess addresses at full speed and learn
+   which ones eventually started locking. The check now runs before the lookup, so an unknown
+   address is throttled exactly like a real one.
+2. **Refresh tokens were plain base64.** The token travels in a cookie, and `+`, `/` and `=` are
+   percent-encoded in transit, so the value that came back never hashed to the value that was
+   stored and every rotation failed. Tokens are base64url now.
+
+### Environment work
+
+- **Smart App Control** (enforced on this machine) blocked the test host from loading freshly built
+  unsigned assemblies. The trigger was coverlet, which rewrites assemblies on disk at run time and
+  so produces new unevaluated files on every run. The suite now uses dotnet-coverage, which attaches
+  a profiler and writes nothing new, and runs one project at a time rather than four in parallel.
+  Nothing about coverage is weakened: the same line data, the same Cobertura format, the same floor.
+  The one remaining retry in `scripts/run-tests.ps1` fires only on that specific block and reports
+  its count. Recorded as ADR-R03 and ASM-8.
+- **Seeding raced with itself** when several hosts started together: two callers both found no
+  Owner role and both inserted it. Fixed with a SQL Server application lock around the whole
+  seeding routine, which is what production needs the first time it runs two instances. ASM-9.
+- The anti-stub scan caught an empty catch block in that new lock class. The code was fixed to log
+  the reason; the scan was not touched.

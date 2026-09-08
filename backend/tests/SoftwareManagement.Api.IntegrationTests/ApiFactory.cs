@@ -26,7 +26,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public const string TestSigningKey = "integration-tests-signing-key-not-a-secret-0123456789";
 
     public const string TestConnectionString =
-        "Server=(localdb)\\MSSQLLocalDB;Database=SoftwareManagementDb_Tests;Trusted_Connection=True;TrustServerCertificate=True";
+        "Server=.\\SQLEXPRESS;Database=SoftwareManagementDb_Tests;Trusted_Connection=True;TrustServerCertificate=True";
 
     private static readonly string[] ManagedVariables =
     [

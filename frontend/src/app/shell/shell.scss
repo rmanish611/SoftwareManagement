@@ -1,0 +1,93 @@
+.skip-link {
+  background: var(--colour-surface);
+  border-radius: var(--radius-sm);
+  color: var(--colour-text);
+  left: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  position: absolute;
+  top: calc(var(--space-3) * -6);
+  transition: top 120ms ease-in-out;
+  z-index: 10;
+
+  &:focus-visible {
+    top: var(--space-3);
+  }
+}
+
+.shell {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+}
+
+.shell__header {
+  align-items: center;
+  border-bottom: 1px solid var(--colour-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+}
+
+.shell__brand {
+  align-items: center;
+  color: inherit;
+  display: inline-flex;
+  font-weight: 600;
+  gap: var(--space-3);
+  text-decoration: none;
+}
+
+.shell__mark {
+  align-items: center;
+  background: var(--colour-accent);
+  border-radius: var(--radius-sm);
+  color: var(--colour-accent-contrast);
+  display: inline-flex;
+  font-size: 0.85rem;
+  height: 2rem;
+  justify-content: center;
+  letter-spacing: 0.04em;
+  width: 2rem;
+}
+
+.shell__nav {
+  display: flex;
+  gap: var(--space-4);
+
+  a {
+    // 24 by 24 CSS pixels is the WCAG 2.2 AA minimum target size (NFR-ACC-01).
+    align-items: center;
+    color: var(--colour-text-muted);
+    display: inline-flex;
+    min-height: 24px;
+    min-width: 24px;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--colour-text);
+      text-decoration: underline;
+    }
+  }
+}
+
+.shell__main {
+  padding: var(--space-6) var(--space-5);
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.shell__footer {
+  border-top: 1px solid var(--colour-border);
+  color: var(--colour-text-muted);
+  font-size: 0.875rem;
+  padding: var(--space-4) var(--space-5);
+
+  p {
+    margin: 0;
+  }
+}

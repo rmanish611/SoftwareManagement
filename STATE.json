@@ -27,16 +27,19 @@
     "aspNetRuntime": "Microsoft.AspNetCore.App 8.0.30, 9.0.19, 10.0.11",
     "angularCli": "21.1.1",
     "git": "git version 2.52.0.windows.1",
-    "dbInstance": "(localdb)\\MSSQLLocalDB",
+    "dbInstance": ".\\SQLEXPRESS",
     "efToolVersion": "10.0.11",
-    "npm": "11.6.2"
+    "npm": "11.6.2",
+    "sqlEngine": "Microsoft SQL Server 2025 (RTM) - 17.0.1000.7",
+    "nodeToolchain": "tools/node/node-v24.20.0-win-x64 (v24.20.0, checksum verified)",
+    "ngTestRunner": "vitest (@angular/build:unit-test)"
   },
   "runStatus": "RUNNING",
   "repoUrl": "https://github.com/rmanish611/SoftwareManagement.git",
   "schemaVersion": 2,
   "requirementsSha256": "B752D3F8174396AEC9C9730B4009F6E52ACC35CF5ECE34F366EB99CFFB69B5EF",
   "pass1Sha": "412d4e06ba28b6543992c23a18c110467c0f632e",
-  "lastUpdatedUtc": "2026-09-07T23:36:49.268Z",
+  "lastUpdatedUtc": "2026-09-08T00:29:46.395Z",
   "briefRevisedUtc": "2026-09-06T17:04:31.134Z",
   "protocolSha256": "2E34D263B3EC9816A115C7908D429DFF32AA9EE2FF1C7A51E3BA8AAFDA47FEEA",
   "intentLock": "Software Management is the corporate website of the owner's own software company. Its primary user is a prospective customer (an SMB owner or IT decision-maker in India first, global later) who wants to see what the company builds, open a live demo of a product such as the ERP or the hospital-management SaaS, and get in touch. The three most important jobs: (1) present the company and its product catalogue credibly, the way a large IT vendor does - company profile, services, technology stack, product pages with features, screenshots, plans, demo and API links, projects and case studies; (2) turn visitors into leads - contact, demo request, quote or tenant request - through spam-safe forms with notifications and a lead pipeline the owner works from the admin panel; (3) let the owner run the site and the sales record without a developer - CMS-style management of every public section plus recording the tenants and subscriptions sold and their lifecycle. Explicitly out of scope: licence-key delivery, a marketplace for third-party sellers, and the functionality of the SaaS products themselves.",
@@ -1725,5 +1728,11 @@
       "blockers": []
     }
   ],
-  "guardrailHashes": {}
+  "guardrailHashes": {
+    "frontend/angular.json": "9E36AF3A5AAFA6959C11B8A4087967DDFF71F04C7C999A717700F22B05F89C0F",
+    "backend/Directory.Build.props": "A45EF2CD64871C46A678EF60913429D8978B8461D6AD2216C24182EAED74385E",
+    ".editorconfig": "C45E587D3D2CAD013FD0789B97060E56021C691FC1F126B2A42D03C31A60819A",
+    "frontend/eslint.config.js": "C92A49968FAB95FD7EA538AE9E7501567682FD3CB4C202775EF5A7ED2E49A4A7",
+    "backend/coverlet.runsettings": "C707A7B59255E4936DEC0349530958C53ECD91923965D17236CA002CAC46E1B6"
+  }
 }

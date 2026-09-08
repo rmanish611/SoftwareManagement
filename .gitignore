@@ -506,3 +506,6 @@ backend/**/logs/
 _publish/
 coverage/
 TestResults/
+
+# Project-local Node toolchain (see docs/ENVIRONMENT.md; restored by tools/get-node.ps1)
+tools/node/

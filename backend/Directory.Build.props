@@ -32,8 +32,6 @@
 
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
     <IsPackable>false</IsPackable>
-    <!-- xUnit's analyser is useful in tests and noisy nowhere else. -->
-    <NoWarn></NoWarn>
   </PropertyGroup>
 
 </Project>

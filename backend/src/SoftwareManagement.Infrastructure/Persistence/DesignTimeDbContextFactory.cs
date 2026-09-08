@@ -12,8 +12,10 @@ namespace SoftwareManagement.Infrastructure.Persistence;
 /// </summary>
 public sealed class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
+    // ADR-R01: development runs against the already-running SQL Express instance, because
+    // LocalDB stopped answering on its own named pipe on this machine.
     private const string DefaultDesignTimeConnection =
-        "Server=(localdb)\\MSSQLLocalDB;Database=SoftwareManagementDb;Trusted_Connection=True;TrustServerCertificate=True";
+        "Server=.\\SQLEXPRESS;Database=SoftwareManagementDb;Trusted_Connection=True;TrustServerCertificate=True";
 
     public AppDbContext CreateDbContext(string[] args)
     {

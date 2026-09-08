@@ -2,10 +2,14 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SoftwareManagement.Application.Analytics;
+using SoftwareManagement.Application.Catalog;
 using SoftwareManagement.Application.Content;
 using SoftwareManagement.Application.Security;
 using SoftwareManagement.Domain.Common;
 using SoftwareManagement.Domain.Identity;
+using SoftwareManagement.Infrastructure.Analytics;
+using SoftwareManagement.Infrastructure.Catalog;
 using SoftwareManagement.Infrastructure.Content;
 using SoftwareManagement.Infrastructure.Persistence;
 using SoftwareManagement.Infrastructure.Security;
@@ -79,6 +83,8 @@ public static class DependencyInjection
         services.AddScoped<ISlugService, SlugService>();
         services.AddScoped<IEditorTimeZone, EditorTimeZone>();
         services.AddScoped<IPublishingService, PublishingService>();
+        services.AddScoped<IProductPublishingService, ProductPublishingService>();
+        services.AddScoped<IPageViewCounter, PageViewCounter>();
         services.AddScoped<DatabaseSeeder>();
 
         return services;

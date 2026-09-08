@@ -24,6 +24,15 @@ export const routes: Routes = [
     title: 'Services',
   },
   {
+    path: 'products',
+    loadComponent: () => import('./public/products/product-catalog').then((m) => m.ProductCatalog),
+    title: 'Software we build',
+  },
+  {
+    path: 'products/:slug',
+    loadComponent: () => import('./public/products/product-detail').then((m) => m.ProductDetail),
+  },
+  {
     path: 'admin/login',
     loadComponent: () => import('./admin/login/login').then((m) => m.Login),
     title: 'Sign in',

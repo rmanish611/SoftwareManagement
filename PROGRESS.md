@@ -212,3 +212,49 @@ the API.
 The render proof counts the routes it actually reached and fails if that number is short of the
 number asked for: the first version of it printed PASS after a PowerShell reserved-variable error
 skipped every route check, which is exactly the failure a gate script must not have.
+
+## P06 - Public catalogue and product pages - DONE (2026-09-08)
+
+The catalogue a visitor reads: industry filters, search across product and feature text, product
+pages with features, a screenshot gallery, a plan comparison table, an FAQ and a demo button that
+disappears when the demo is down. Behind it, the publishing gate that refuses a product short of
+three features, a screenshot and a plan, archiving that keeps a retired address claimed, and
+first-party page-view counters that identify nobody. 145 backend and 70 frontend tests pass,
+coverage 76.5%.
+
+### The defect that mattered: every server-rendered page was empty
+
+The site renders on the server so that search engines see the content. It did not. A component asks
+for `/api/v1/public/products`; in a browser that resolves against the site's own origin, but during
+server-side rendering it resolved against the rendering server itself, which answered with a
+rendered HTML page. The component received HTML where it expected JSON, treated it as a failure and
+rendered its empty state. Every public page had been shipping to crawlers as an empty shell since
+P04.
+
+The P04 and P05 render proofs did not catch it because their markers were `data-testid` attributes
+on section wrappers, which are in the HTML whether or not the page reached the API. The marker for a
+catalogue route is now the product's own name, which cannot be produced without the data, and the
+script's documentation says so in as many words.
+
+The fix is a small `/api` forwarder in the server-rendering process, so the renderer and the browser
+resolve the same relative URL to the same API. That is also the ordinary single-origin deployment
+shape, so nothing about it is a workaround.
+
+### Two smaller defects, both found by tightening a check rather than by luck
+
+1. **The page-size cap check could not fail.** `@('[]' | ConvertFrom-Json).Count` is 1 in Windows
+   PowerShell, so an empty catalogue reported one item and the assertion passed on a meaningless
+   number. It is a named function with an explicit empty case now, and the assertion demands at
+   least one item as well as at most a hundred.
+2. **The smoke never exercised the publishing path.** It now uploads a real PNG through the media
+   endpoint, attaches it, publishes, and reads the public page back, which is what caught the
+   renderer defect in the first place.
+
+### Accessibility, measured for the first time
+
+NFR-ACC-01 had never been checked; P04 carried an axe row in its exit table and its gate summary
+quietly did not mention it. The axe engine now runs inside the test suite over the rendered
+components, and three further tests prove the harness reports real violations rather than passing
+silently. The catalogue, the product page, the about page and the services page are all clean of
+serious and critical violations. See ASM-12, and ASM-11 for the Lighthouse row that is honestly
+recorded as not measured.

@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
+import { describeViolations, findSeriousAccessibilityViolations } from '../../../testing/accessibility';
 import { About } from './about';
 
 describe('About', () => {
@@ -70,5 +71,14 @@ describe('About', () => {
     await fixture.whenStable();
 
     expect(element().querySelector('[data-testid="about-error"]')?.textContent).toContain('Email us');
+  });
+
+  it('has no serious or critical accessibility violations', async () => {
+    http.expectOne('/api/v1/public/company').flush(company);
+    await fixture.whenStable();
+
+    document.body.appendChild(element());
+    const violations = await findSeriousAccessibilityViolations(element());
+    expect(describeViolations(violations)).toBe('');
   });
 });

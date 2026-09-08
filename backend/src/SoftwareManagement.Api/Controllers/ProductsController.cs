@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SoftwareManagement.Application.Catalog;
 using SoftwareManagement.Application.Common;
 using SoftwareManagement.Application.Content;
 using SoftwareManagement.Application.Security;
@@ -22,12 +23,14 @@ namespace SoftwareManagement.Api.Controllers;
 [Route("api/v1/admin/products")]
 public sealed class ProductsController(
     AppDbContext dbContext,
-    ISlugService slugs) : ControllerBase
+    ISlugService slugs,
+    IProductPublishingService publishing) : ControllerBase
 {
     private const string ProductPathPrefix = "/products/";
 
     private readonly AppDbContext _dbContext = dbContext;
     private readonly ISlugService _slugs = slugs;
+    private readonly IProductPublishingService _publishing = publishing;
 
     [HttpGet]
     [Authorize(Policy = Permissions.Catalog.ProductRead)]
@@ -628,6 +631,160 @@ public sealed class ProductsController(
         return demo is null ? NotFound() : Ok(new DemoCredentials(demo.Url, demo.DemoUsername, demo.DemoPassword));
     }
 
+    /// <summary>
+    /// What is still missing before this product could be published. The admin screen asks before
+    /// showing the button, so an editor is never told "no" only after pressing it.
+    /// </summary>
+    [HttpGet("{id:guid}/readiness")]
+    [Authorize(Policy = Permissions.Catalog.ProductRead)]
+    public async Task<ActionResult<ReadinessReport>> Readiness(Guid id, CancellationToken cancellationToken)
+    {
+        var readiness = await _publishing.ReadinessAsync(id, cancellationToken).ConfigureAwait(false);
+
+        return readiness is null
+            ? NotFound()
+            : Ok(new ReadinessReport(
+                readiness.IsReady,
+                readiness.Explain(),
+                [.. readiness.Shortfalls.Select(s => new ShortfallReport(s.What, s.Has, s.Needs))]));
+    }
+
+    [HttpPost("{id:guid}/publish")]
+    [Authorize(Policy = Permissions.Catalog.ProductPublish)]
+    public async Task<IActionResult> Publish(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _publishing.PublishAsync(id, ActorEmail(), cancellationToken).ConfigureAwait(false);
+
+        return result.Outcome switch
+        {
+            ProductPublishOutcome.Published => NoContent(),
+            ProductPublishOutcome.NotFound => NotFound(),
+            ProductPublishOutcome.AlreadyArchived => CatalogProblem(
+                StatusCodes.Status409Conflict,
+                "PRODUCT_ARCHIVED",
+                "This product is archived",
+                "Archived products stay out of the catalogue. Create a new product rather than reviving this one."),
+
+            // The failing counts go in the response, not just "not ready": an editor should not have
+            // to open three screens to find out which threshold they are short of (REQ-CAT-009).
+            _ => CatalogProblem(
+                StatusCodes.Status422UnprocessableEntity,
+                "NOT_READY_TO_PUBLISH",
+                "Not enough to publish yet",
+                result.Readiness?.Explain() ?? "This product is not ready to publish.",
+                new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["shortfalls"] = result.Readiness?.Shortfalls
+                        .Select(s => new ShortfallReport(s.What, s.Has, s.Needs))
+                        .ToList(),
+                }),
+        };
+    }
+
+    [HttpPost("{id:guid}/unpublish")]
+    [Authorize(Policy = Permissions.Catalog.ProductPublish)]
+    public async Task<IActionResult> Unpublish(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _publishing.UnpublishAsync(id, ActorEmail(), cancellationToken).ConfigureAwait(false);
+        return result.Outcome == ProductPublishOutcome.NotFound ? NotFound() : NoContent();
+    }
+
+    [HttpPost("{id:guid}/archive")]
+    [Authorize(Policy = Permissions.Catalog.ProductArchive)]
+    public async Task<IActionResult> Archive(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _publishing.ArchiveAsync(id, ActorEmail(), cancellationToken).ConfigureAwait(false);
+
+        return result.Outcome switch
+        {
+            ProductPublishOutcome.Archived => NoContent(),
+            ProductPublishOutcome.NotFound => NotFound(),
+            _ => CatalogProblem(
+                StatusCodes.Status409Conflict,
+                "PRODUCT_ARCHIVED",
+                "This product is already archived",
+                "Nothing to do: it is already out of the catalogue."),
+        };
+    }
+
+    /// <summary>
+    /// Deleting a product is refused once it has been public, because its address, its price and
+    /// its name are cited outside this system by then. Archiving is the operation that retires a
+    /// product; deleting is only for something created by mistake and never shown to anyone
+    /// (BR-CAT-08, REQ-CAT-015).
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = Permissions.Catalog.ProductArchive)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var product = await _dbContext.Products
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken).ConfigureAwait(false);
+
+        if (product is null)
+        {
+            return NotFound();
+        }
+
+        var wasEverPublic = product.PublishedAtUtc is not null || product.Status != ContentStatus.Draft;
+
+        if (wasEverPublic)
+        {
+            return CatalogProblem(
+                StatusCodes.Status409Conflict,
+                "PRODUCT_IN_USE",
+                "This product cannot be deleted",
+                "It has been published, so its address and its price are quoted outside this system. Archive it instead: it leaves the catalogue and the history stays.");
+        }
+
+        _dbContext.Products.Remove(product);
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/faqs")]
+    [Authorize(Policy = Permissions.Catalog.ProductWrite)]
+    public async Task<ActionResult<FaqDetail>> AddFaq(Guid id, FaqBody body, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+
+        if (!await _dbContext.Products.AnyAsync(p => p.Id == id, cancellationToken).ConfigureAwait(false))
+        {
+            return NotFound();
+        }
+
+        var question = (body.Question ?? string.Empty).Trim();
+        var answer = (body.Answer ?? string.Empty).Trim();
+
+        if (question.Length == 0 || answer.Length == 0)
+        {
+            return CatalogProblem(
+                StatusCodes.Status422UnprocessableEntity,
+                "FAQ_INCOMPLETE",
+                "A question needs an answer",
+                "Half of a question and answer pair is worse on the page than neither half.");
+        }
+
+        var used = await _dbContext.FaqItems
+            .Where(f => f.ProductId == id)
+            .CountAsync(cancellationToken).ConfigureAwait(false);
+
+        var faq = new FaqItem
+        {
+            Id = Guid.NewGuid(),
+            ProductId = id,
+            Question = question,
+            Answer = answer,
+            SortOrder = used + 1,
+            IsPublished = body.IsPublished,
+            CreatedBy = ActorEmail(),
+        };
+
+        _dbContext.FaqItems.Add(faq);
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return Ok(new FaqDetail(faq.Id, faq.Question, faq.Answer, faq.SortOrder, faq.IsPublished));
+    }
+
     private static string NormaliseCurrency(string? currency) =>
         string.IsNullOrWhiteSpace(currency) ? "INR" : currency.Trim().ToUpperInvariant();
 
@@ -889,3 +1046,11 @@ public sealed record ProductDetail(
             product.Demo is null ? null : new DemoDetail(product.Demo.Url, product.Demo.IsEnabled, product.Demo.HealthState.ToString(), product.Demo.DemoUsername is not null));
     }
 }
+
+public sealed record FaqBody(string Question, string Answer, bool IsPublished);
+
+public sealed record FaqDetail(Guid Id, string Question, string Answer, int SortOrder, bool IsPublished);
+
+public sealed record ShortfallReport(string What, int Has, int Needs);
+
+public sealed record ReadinessReport(bool IsReady, string Explanation, IReadOnlyList<ShortfallReport> Shortfalls);

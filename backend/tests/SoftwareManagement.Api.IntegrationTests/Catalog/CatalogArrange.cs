@@ -176,7 +176,98 @@ public static class CatalogArrange
         return category;
     }
 
+    /// <summary>
+    /// A product that clears every publishing threshold: three features, a screenshot and a
+    /// published plan, in a published category. Most of the public-catalogue tests start from one,
+    /// and building it by hand in each of them would bury the thing each test is actually about.
+    /// </summary>
+    public static async Task<ProductRow> BuildPublishableProductAsync(
+        ContentFixture fixture,
+        HttpClient client,
+        string name,
+        string nonce,
+        string categorySlug = "erp")
+    {
+        var product = await CreateProductAsync(client, name, categorySlug: categorySlug);
+        await BuildPublishableProductAsync(fixture, client, product);
+        return product;
+    }
+
+    /// <summary>Brings an existing draft up to the publishing thresholds.</summary>
+    public static async Task BuildPublishableProductAsync(ContentFixture fixture, HttpClient client, ProductRow product)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+
+        var nonce = Nonce();
+
+        await AddFeatureAsync(client, product.Id, $"Feature one {nonce}");
+        await AddFeatureAsync(client, product.Id, $"Feature two {nonce}");
+        await AddFeatureAsync(client, product.Id, $"Feature three {nonce}");
+
+        var asset = await AddMediaAssetAsync(fixture, nonce);
+        var screenshot = await client.PostAsJsonAsync($"/api/v1/admin/products/{product.Id}/screenshots",
+            new { mediaAssetId = asset, caption = "The dashboard" });
+        await EnsureCreatedAsync(screenshot);
+
+        await AddPlanAsync(client, product.Id, "Starter", 1999m);
+    }
+
+    /// <summary>
+    /// Marks a demo as having failed its checks. The hourly checker itself arrives in P13; the page
+    /// only needs to know what the checker would have recorded.
+    /// </summary>
+    public static async Task MarkDemoDownAsync(ContentFixture fixture, Guid productId)
+    {
+        ArgumentNullException.ThrowIfNull(fixture);
+
+        using var scope = fixture.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var demo = await db.DemoEnvironments.FirstAsync(d => d.ProductId == productId);
+        demo.HealthState = DemoHealth.Down;
+        demo.ConsecutiveFailures = DemoEnvironment.FailuresBeforeDown;
+        demo.LastCheckedUtc = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+    }
+
     public sealed record ProductRow(Guid Id, string Name, string Slug, string Category, string CategorySlug, string Status);
+
+    public sealed record ProductDetailRow(Guid Id, string Name, string Slug, IReadOnlyList<FeatureRow> Features, IReadOnlyList<PlanRow> Plans);
+
+    public sealed record PublicFeatureRow(string Name, string? Description, string? GroupName);
+
+    public sealed record PublicScreenshotRow(string Url, string? Caption, string? AltText);
+
+    public sealed record PublicCellRow(string Feature, string Availability, string? LimitValue);
+
+    public sealed record PublicPlanRow(
+        string Name,
+        decimal Price,
+        string Currency,
+        string BillingPeriod,
+        bool IsRecommended,
+        IReadOnlyList<PublicCellRow> Cells);
+
+    public sealed record PublicFaqRow(string Question, string Answer);
+
+    public sealed record PublicDemoRow(string Url, string? Username, string? Password);
+
+    public sealed record PublicPage(
+        string Name,
+        string Slug,
+        string Tagline,
+        string Summary,
+        string MetaTitle,
+        string? MetaDescription,
+        IReadOnlyList<PublicFeatureRow> Features,
+        IReadOnlyList<PublicScreenshotRow> Screenshots,
+        IReadOnlyList<PublicPlanRow> Plans,
+        IReadOnlyList<PublicFaqRow> Faqs,
+        PublicDemoRow? Demo);
+
+    public sealed record ShortfallRow(string What, int Has, int Needs);
+
+    public sealed record ReadinessRow(bool IsReady, string Explanation, IReadOnlyList<ShortfallRow> Shortfalls);
 
     public sealed record FeatureRow(Guid Id, string Name, int SortOrder);
 

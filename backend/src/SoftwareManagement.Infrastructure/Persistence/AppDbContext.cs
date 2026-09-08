@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using SoftwareManagement.Domain.Analytics;
 using SoftwareManagement.Domain.Audit;
 using SoftwareManagement.Domain.Catalog;
 using SoftwareManagement.Domain.Common;
@@ -72,6 +73,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IClock clock)
     public DbSet<DemoEnvironment> DemoEnvironments => Set<DemoEnvironment>();
 
     public DbSet<FaqItem> FaqItems => Set<FaqItem>();
+
+    public DbSet<PageViewStat> PageViewStats => Set<PageViewStat>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

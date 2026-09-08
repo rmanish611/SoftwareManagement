@@ -167,3 +167,46 @@ Auditor, which is the refusal that test now asserts.
   are asserted in the same test.
 - `ContentFixture` seeds an Auditor alongside the Owner, Editor and Sales, so a read-only role can
   be asserted directly rather than inferred.
+
+## ADR-R05 - The server-rendering process forwards /api to the API
+
+**Status.** Accepted, P06, 2026-09-08.
+
+**Context.** The public site renders on the server so that a search engine sees real content
+(NFR-SEO-01). It was not doing that. A component asks for a relative URL, `/api/v1/public/products`.
+In a browser that resolves against the site's own origin and reaches the API. During server-side
+rendering it resolved against the rendering server, which answered with a rendered HTML page; the
+component received HTML where it expected JSON, treated the response as a failure, and rendered its
+empty state.
+
+Every public page had been served to crawlers as an empty shell since P04. The render proofs of P04
+and P05 reported PASS because their markers were `data-testid` attributes on section wrappers, which
+appear in the HTML whether or not the page reached the API.
+
+**Options considered.**
+
+1. **Give the renderer an absolute API address through a token.** Rejected. It works, but it means
+   two addresses for the same API, one for the browser and one for the server, that have to be kept
+   in step through every deployment; and the first time they disagree the symptom is exactly the one
+   above, silence rather than an error.
+2. **Point the renderer at the API and leave the browser to a separate origin.** Rejected: it needs
+   cross-origin configuration, a second hostname and a cookie policy that spans both, all to avoid
+   a forwarder that is a dozen lines.
+3. **Forward `/api` from the rendering process to the API.** Chosen.
+
+**Decision.** `frontend/src/server.ts` forwards everything under `/api` to `API_BASE_URL` when that
+variable is set. The body is streamed rather than buffered, so an upload passes through without
+sitting in memory; hop-by-hop headers are dropped; the original host is passed on as
+`X-Forwarded-Host`; and an unreachable API is a 502 from this process rather than a rendering
+failure. When the variable is unset nothing is forwarded, which is the right behaviour behind a
+reverse proxy that already does it.
+
+**Consequences.**
+
+- The renderer and the browser resolve the same relative URL to the same place, which is the whole
+  point: there is one address, not two that can drift.
+- The render proof's markers are now content rather than test ids, and the script says why. A marker
+  that a component can emit without any data proves the route rendered and nothing else.
+- The forwarder is a single point every API call passes through in this deployment shape. It is
+  deliberately dumb: it adds no caching, no retries and no rewriting, so there is nothing in it to
+  get subtly wrong.

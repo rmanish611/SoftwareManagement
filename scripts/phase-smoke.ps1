@@ -38,6 +38,100 @@ $ownerEmail = 'owner@softwaremanagement.test'
 $ownerPassword = 'Gate-' + ([Guid]::NewGuid().ToString('N')) + '-Aa1!'
 $failures = New-Object System.Collections.Generic.List[string]
 
+function Measure-JsonArray {
+    <#
+        Counts the items in a JSON array response.
+
+        Written out rather than inlined because `@('[]' | ConvertFrom-Json).Count` is 1 in Windows
+        PowerShell: ConvertFrom-Json returns nothing for an empty array, and @() wraps that nothing
+        in a one-element array holding $null. A check that reports 1 for an empty list is a check
+        that cannot fail, which is worse than no check.
+    #>
+    param([string]$Json)
+
+    if ([string]::IsNullOrWhiteSpace($Json)) { return 0 }
+
+    $parsed = $Json | ConvertFrom-Json
+    if ($null -eq $parsed) { return 0 }
+    if ($parsed -is [array]) { return $parsed.Count }
+    return 1
+}
+
+function Send-PngUpload {
+    <#
+        Uploads a one-pixel PNG to the media library.
+
+        The multipart body is assembled by hand because Windows PowerShell's Invoke-WebRequest has
+        no -Form parameter. The bytes are a real PNG, not a renamed text file: the API inspects the
+        first bytes of every upload and refuses anything whose content does not match what it claims
+        to be, so a fake would be rejected here exactly as it should be.
+    #>
+    param([string]$Token, [string]$BaseUrl, [string]$Nonce)
+
+    $png = [byte[]]@(
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+        0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+        0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+        0x42, 0x60, 0x82
+    )
+
+    $boundary = "----smoke$Nonce"
+    $newline = "`r`n"
+    $encoding = [System.Text.Encoding]::GetEncoding('iso-8859-1')
+
+    $head = "--$boundary$newline" +
+        "Content-Disposition: form-data; name=`"file`"; filename=`"probe-$Nonce.png`"$newline" +
+        "Content-Type: image/png$newline$newline"
+
+    $tail = "$newline--$boundary$newline" +
+        "Content-Disposition: form-data; name=`"altText`"$newline$newline" +
+        "The probe screenshot$newline" +
+        "--$boundary--$newline"
+
+    # Assembled through a MemoryStream rather than by adding arrays: PowerShell's + on byte arrays
+    # produces an Object[], which Invoke-WebRequest then sends as text and the server reads as a
+    # truncated form.
+    $stream = New-Object System.IO.MemoryStream
+    $headBytes = $encoding.GetBytes($head)
+    $tailBytes = $encoding.GetBytes($tail)
+    $stream.Write($headBytes, 0, $headBytes.Length)
+    $stream.Write($png, 0, $png.Length)
+    $stream.Write($tailBytes, 0, $tailBytes.Length)
+    $body = $stream.ToArray()
+    $stream.Dispose()
+
+    try {
+        $request = [System.Net.HttpWebRequest]::Create("$BaseUrl/api/v1/admin/media")
+        $request.Method = 'POST'
+        $request.ContentType = "multipart/form-data; boundary=$boundary"
+        $request.Headers.Add('Authorization', "Bearer $Token")
+        $request.ContentLength = $body.Length
+        $request.Timeout = 30000
+
+        $requestStream = $request.GetRequestStream()
+        $requestStream.Write($body, 0, $body.Length)
+        $requestStream.Close()
+
+        $response = $request.GetResponse()
+        $reader = New-Object System.IO.StreamReader($response.GetResponseStream())
+        $content = $reader.ReadToEnd()
+        $status = [int]$response.StatusCode
+        $response.Close()
+
+        return [pscustomobject]@{ Status = $status; Content = $content }
+    }
+    catch [System.Net.WebException] {
+        $r = $_.Exception.Response
+        if ($null -eq $r) { return [pscustomobject]@{ Status = 0; Content = $_.Exception.Message } }
+        $reader = New-Object System.IO.StreamReader($r.GetResponseStream())
+        return [pscustomobject]@{ Status = [int]$r.StatusCode; Content = $reader.ReadToEnd() }
+    }
+    catch {
+        return [pscustomobject]@{ Status = 0; Content = $_.Exception.Message }
+    }
+}
+
 function Get-Status {
     param([string]$Path, [hashtable]$Headers = @{}, [string]$Method = 'GET', $Body = $null)
 
@@ -181,6 +275,74 @@ try {
 
         Write-Output "PLAN_IMPLAUSIBLE_YEARLY_STATUS=$($implausible.Status)"
         if ($implausible.Status -ne 422) { $failures.Add("an implausible yearly price returned $($implausible.Status), expected 422") }
+
+        # The publishing gate. The probe has a plan and no features or screenshots, so it is exactly
+        # the case BR-CAT-01 exists to refuse, and the response has to name the failing counts.
+        $publish = Get-Status "/api/v1/admin/products/$productId/publish" -Method 'POST' -Headers $auth
+        Write-Output "PUBLISH_INCOMPLETE_STATUS=$($publish.Status)"
+        Write-Output "PUBLISH_INCOMPLETE_BODY=$($publish.Content)"
+        if ($publish.Status -ne 422) { $failures.Add("publishing an incomplete product returned $($publish.Status), expected 422") }
+        if ($publish.Content -notlike '*features*') { $failures.Add('the publish refusal did not name the failing counts') }
+
+        # A draft's public address is a 404 to a stranger, never a 403 (NFR-AUTHZ-04).
+        $draft = Get-Status "/api/v1/public/products/$probeSlug"
+        Write-Output "PUBLIC_DRAFT_STATUS=$($draft.Status)"
+        if ($draft.Status -ne 404) { $failures.Add("a draft product's public address answered $($draft.Status), expected 404") }
+
+        $readiness = Get-Status "/api/v1/admin/products/$productId/readiness" -Headers $auth
+        Write-Output "READINESS_STATUS=$($readiness.Status)"
+        Write-Output "READINESS_BODY=$($readiness.Content)"
+        if ($readiness.Status -ne 200) { $failures.Add("the readiness report returned $($readiness.Status)") }
+
+        # Bring the probe up to the thresholds and publish it for real, so the public catalogue has
+        # something in it and the whole path is exercised: upload, attach, describe, publish, read.
+        foreach ($feature in @('Ledger', 'Invoicing', 'Reporting')) {
+            $added = Get-Status "/api/v1/admin/products/$productId/features" -Method 'POST' -Headers $auth -Body @{
+                name = $feature; description = "What $feature does."; groupName = 'Core'; isHighlighted = $false
+            }
+            if ($added.Status -ne 200) { $failures.Add("adding the feature $feature returned $($added.Status)") }
+        }
+
+        $upload = Send-PngUpload -Token $token -BaseUrl $baseUrl -Nonce $Nonce
+        Write-Output "MEDIA_UPLOAD_STATUS=$($upload.Status)"
+        if ($upload.Status -ne 201 -and $upload.Status -ne 200) {
+            $failures.Add("uploading the probe screenshot returned $($upload.Status): $($upload.Content)")
+        }
+        else {
+            $assetId = ($upload.Content | ConvertFrom-Json).id
+            $attached = Get-Status "/api/v1/admin/products/$productId/screenshots" -Method 'POST' -Headers $auth -Body @{
+                mediaAssetId = $assetId; caption = 'The dashboard'
+            }
+            Write-Output "SCREENSHOT_ATTACH_STATUS=$($attached.Status)"
+            if ($attached.Status -ne 200) { $failures.Add("attaching the screenshot returned $($attached.Status)") }
+        }
+
+        $publishNow = Get-Status "/api/v1/admin/products/$productId/publish" -Method 'POST' -Headers $auth
+        Write-Output "PUBLISH_COMPLETE_STATUS=$($publishNow.Status)"
+        if ($publishNow.Status -ne 204) { $failures.Add("publishing the completed product returned $($publishNow.Status): $($publishNow.Content)") }
+
+        $publicPage = Get-Status "/api/v1/public/products/$probeSlug"
+        Write-Output "PUBLIC_PAGE_STATUS=$($publicPage.Status)"
+        if ($publicPage.Status -ne 200) { $failures.Add("the published product's public page answered $($publicPage.Status)") }
+        if ($publicPage.Content -notlike '*Ledger*') { $failures.Add('the public product page did not carry its feature list') }
+
+        # A caller asking for a hundred thousand gets the ceiling, not a slow query (NFR-PERF-04).
+        $huge = Get-Status '/api/v1/public/products?pageSize=100000'
+        $returned = if ($huge.Status -eq 200) { Measure-JsonArray $huge.Content } else { -1 }
+        Write-Output "PUBLIC_PAGESIZE_CAP_STATUS=$($huge.Status) ITEMS=$returned"
+        if ($huge.Status -ne 200 -or $returned -gt 100 -or $returned -lt 1) {
+            $failures.Add("pageSize=100000 returned $returned items with status $($huge.Status)")
+        }
+
+        $searched = Get-Status '/api/v1/public/products?search=Invoicing'
+        $found = if ($searched.Status -eq 200) { Measure-JsonArray $searched.Content } else { -1 }
+        Write-Output "PUBLIC_SEARCH_STATUS=$($searched.Status) ITEMS=$found"
+        if ($found -lt 1) { $failures.Add('searching a word from a feature found nothing') }
+
+        $noMatch = Get-Status "/api/v1/public/products?search=nothing-matches-$Nonce"
+        $none = if ($noMatch.Status -eq 200) { Measure-JsonArray $noMatch.Content } else { -1 }
+        Write-Output "PUBLIC_SEARCH_EMPTY_STATUS=$($noMatch.Status) ITEMS=$none"
+        if ($noMatch.Status -ne 200 -or $none -ne 0) { $failures.Add("a search matching nothing returned $none items with status $($noMatch.Status)") }
 
         $env:GATE_PRODUCT_ID = $productId
         $env:GATE_PROBE_NAME = $probeName

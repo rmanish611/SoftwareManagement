@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { describeViolations, findSeriousAccessibilityViolations } from '../../../testing/accessibility';
 import { ServicesPage } from './services-page';
 
 describe('ServicesPage', () => {
@@ -55,5 +56,16 @@ describe('ServicesPage', () => {
     const text = element().textContent ?? '';
     expect(text).toContain('Tell us what you need');
     expect(text).not.toContain('500');
+  });
+
+  it('has no serious or critical accessibility violations', async () => {
+    http.expectOne('/api/v1/public/services').flush([
+      { name: 'Support', slug: 'support', summary: 'We keep it running.', technologies: ['Angular'] },
+    ]);
+    await fixture.whenStable();
+
+    document.body.appendChild(element());
+    const violations = await findSeriousAccessibilityViolations(element());
+    expect(describeViolations(violations)).toBe('');
   });
 });

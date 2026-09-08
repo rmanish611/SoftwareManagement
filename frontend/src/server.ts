@@ -6,10 +6,90 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import { Readable } from 'node:stream';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
+
+/**
+ * Where the API lives, for requests this process makes on a visitor's behalf.
+ *
+ * Without this the site renders empty. A component asks for `/api/v1/public/products`; in a browser
+ * that resolves against the site's own origin and a reverse proxy forwards it, but during
+ * server-side rendering it resolves against this very server, which answers with a rendered HTML
+ * page. The component gets HTML where it expected JSON, treats it as a failure, and renders its
+ * empty state. The page is then served to a search engine with no products on it, which defeats the
+ * entire reason for rendering on the server (NFR-SEO-01).
+ *
+ * So this process forwards `/api` to the API itself. The same forwarding serves the browser, which
+ * means one origin, no cross-origin configuration and no second hostname to keep in step.
+ */
+const apiBaseUrl = (process.env['API_BASE_URL'] ?? '').replace(/\/$/, '');
+
+/** Headers that describe one connection and must not be copied onto another one. */
+const hopByHopHeaders = new Set([
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+  'transfer-encoding',
+  'upgrade',
+  'host',
+  'content-length',
+]);
+
+if (apiBaseUrl) {
+  app.use('/api', (req, res) => {
+    const target = apiBaseUrl + '/api' + req.url;
+
+    const headers = new Headers();
+    for (const [name, value] of Object.entries(req.headers)) {
+      if (value === undefined || hopByHopHeaders.has(name.toLowerCase())) {
+        continue;
+      }
+
+      headers.set(name, Array.isArray(value) ? value.join(', ') : value);
+    }
+
+    // The original host is passed on separately so the API can build absolute URLs that point at
+    // the site rather than at itself.
+    if (req.headers.host) {
+      headers.set('x-forwarded-host', req.headers.host);
+    }
+
+    const hasBody = req.method !== 'GET' && req.method !== 'HEAD';
+
+    fetch(target, {
+      method: req.method,
+      headers,
+      // The body is streamed rather than buffered, so a large upload does not sit in this
+      // process's memory on its way through.
+      body: hasBody ? (Readable.toWeb(req) as ReadableStream) : undefined,
+      duplex: hasBody ? 'half' : undefined,
+      redirect: 'manual',
+    } as RequestInit)
+      .then(async (upstream) => {
+        res.status(upstream.status);
+
+        upstream.headers.forEach((value, name) => {
+          if (!hopByHopHeaders.has(name.toLowerCase())) {
+            res.setHeader(name, value);
+          }
+        });
+
+        const buffer = Buffer.from(await upstream.arrayBuffer());
+        res.end(buffer);
+      })
+      .catch(() => {
+        // The API being unreachable is a 502 from this server: it is not this process's fault, and
+        // it must not be reported as a rendering failure.
+        res.status(502).type('application/json').send('{"title":"The API is not reachable."}');
+      });
+  });
+}
 
 /**
  * Angular refuses to render a request whose Host header it does not recognise, which is what stops

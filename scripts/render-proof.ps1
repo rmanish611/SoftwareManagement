@@ -8,6 +8,12 @@
   server-rendering process against the real API, asks for the routes the phase declared, and reports
   the status and a marker found in the HTML the server sent, before any browser JavaScript ran.
 
+  Pass a marker that is CONTENT, not a test id. A `data-testid` on a section wrapper is present
+  whether or not the page reached the API, so it proves the route rendered and nothing more. That
+  exact mistake hid a real defect for a phase: every server-rendered page was an empty shell,
+  because the renderer's own API calls were resolving back to the renderer. A marker that is a
+  product name or a company name cannot be produced without the data.
+
   It also asks for a file that does not exist. A single-page application that answers 200 with HTML
   for a missing script is a real defect, so that check is here rather than in a comment.
 #>

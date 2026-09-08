@@ -39,15 +39,15 @@
   "schemaVersion": 2,
   "requirementsSha256": "B752D3F8174396AEC9C9730B4009F6E52ACC35CF5ECE34F366EB99CFFB69B5EF",
   "pass1Sha": "412d4e06ba28b6543992c23a18c110467c0f632e",
-  "lastUpdatedUtc": "2026-09-08T02:23:55.336Z",
+  "lastUpdatedUtc": "2026-09-08T02:48:29.486Z",
   "briefRevisedUtc": "2026-09-06T17:04:31.134Z",
   "protocolSha256": "2E34D263B3EC9816A115C7908D429DFF32AA9EE2FF1C7A51E3BA8AAFDA47FEEA",
   "intentLock": "Software Management is the corporate website of the owner's own software company. Its primary user is a prospective customer (an SMB owner or IT decision-maker in India first, global later) who wants to see what the company builds, open a live demo of a product such as the ERP or the hospital-management SaaS, and get in touch. The three most important jobs: (1) present the company and its product catalogue credibly, the way a large IT vendor does - company profile, services, technology stack, product pages with features, screenshots, plans, demo and API links, projects and case studies; (2) turn visitors into leads - contact, demo request, quote or tenant request - through spam-safe forms with notifications and a lead pipeline the owner works from the admin panel; (3) let the owner run the site and the sales record without a developer - CMS-style management of every public section plus recording the tenants and subscriptions sold and their lifecycle. Explicitly out of scope: licence-key delivery, a marketplace for third-party sellers, and the functionality of the SaaS products themselves.",
   "pass2Sha": "4a6bfe3c1183fc03ca72bbdecf39e6ee412f8ec8",
   "blueprintFrozen": true,
   "totalPhases": 14,
-  "currentPhase": 6,
-  "lastVerifiedPhase": 5,
+  "currentPhase": 7,
+  "lastVerifiedPhase": 6,
   "reqCount": 138,
   "mustCount": 98,
   "nfrCoverageFloor": 70,
@@ -99,7 +99,7 @@
   },
   "spawnedPids": [],
   "openBlockers": [],
-  "nextAction": "P06 B1: re-anchor, then build the public catalogue and product pages: the industry-filtered catalogue, the product page with its features, screenshots, plan comparison and demo button, the publish gate that refuses a product short of three features, one screenshot and one plan, and the search-engine metadata for each page.",
+  "nextAction": "P07 B1: re-anchor, then build lead capture: the contact, demo-request and quote-request forms with their field definitions, spam defences (Turnstile, honeypot, rate limit), the consent record the DPDP Act requires, the lead record each submission creates, and the outbox notifications that tell the owner a lead arrived.",
   "phases": [
     {
       "id": 1,
@@ -1068,7 +1068,7 @@
     {
       "id": 6,
       "name": "Public catalogue and product pages",
-      "status": "PENDING",
+      "status": "DONE",
       "startedUtc": "",
       "finishedUtc": "",
       "goal": "Visitors can browse, search and read product pages that are complete, fast and server-rendered.",
@@ -1152,7 +1152,7 @@
       ],
       "rollback": "revert the public routes to the P05 tag; the admin catalogue keeps working and no schema change is lost.",
       "evidenceDir": "_evidence/phase-06",
-      "gateAttempts": 0,
+      "gateAttempts": 1,
       "checkpoint": {
         "step": "",
         "stepStartedUtc": "",
@@ -1160,16 +1160,121 @@
         "filesCreated": [],
         "filesModified": [],
         "scaffoldsDone": [],
-        "packagesAdded": [],
+        "packagesAdded": [
+          "axe-core@4.10.3 (dev)"
+        ],
         "spawnedPids": [],
         "recoveryStash": "",
-        "nextAction": "",
+        "nextAction": "P06 closed. Start P07 at B1.",
         "nextActionPrecondition": ""
       },
       "gate": {
-        "nonce": "",
-        "startedUtc": "",
-        "transcriptSha256": ""
+        "nonce": "p06c",
+        "build": {
+          "exit": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "test": {
+          "exit": 0,
+          "total": 145,
+          "passed": 145,
+          "failed": 0,
+          "skipped": 0,
+          "frontend": 70,
+          "prev": 129,
+          "sacRetries": 0
+        },
+        "coverage": {
+          "line": 76.5,
+          "byPackage": {
+            "Application": 94,
+            "Domain": 88,
+            "Infrastructure": 81.8,
+            "Api": 70.3
+          }
+        },
+        "database": {
+          "exit": 0,
+          "migrationId": "20260908023004_AddPageViewStats",
+          "tableCount": 36,
+          "pendingModelChanges": false,
+          "builtFromEmpty": "SoftwareManagementDb_GateP06c"
+        },
+        "publish": {
+          "exit": 0,
+          "dllBytes": 358912
+        },
+        "smokeApi": {
+          "health": 200,
+          "anonRoutesChecked": 4,
+          "anonFailures": 0,
+          "publicDraft404": true,
+          "probePostStatus": 201,
+          "duplicateSlugStatus": 409,
+          "publishIncompleteStatus": 422,
+          "publishIncompleteNamesCounts": true,
+          "mediaUploadStatus": 201,
+          "screenshotAttachStatus": 200,
+          "publishCompleteStatus": 204,
+          "publicPageStatus": 200,
+          "pageSizeCapItems": 1,
+          "searchItems": 1,
+          "searchNoMatchItems": 0,
+          "pageViewRowsWritten": 2,
+          "stoppedClean": true
+        },
+        "frontendBuild": {
+          "exit": 0,
+          "lint": "clean",
+          "initialKb": 291.2,
+          "lazyChunks": 14,
+          "largestLazyKb": 50.4,
+          "bundleBudgets": "PASS"
+        },
+        "frontendRender": {
+          "indexStatus": 200,
+          "appRootFound": true,
+          "productsCatalogue": 200,
+          "productPage": 200,
+          "productMissing": 200,
+          "missingAsset404": true,
+          "routesChecked": 6,
+          "markersAreContent": true,
+          "ssrReachesApi": true
+        },
+        "accessibility": {
+          "engine": "axe-core 4.10.3 in Vitest",
+          "seriousOrCriticalViolations": 0,
+          "pagesChecked": [
+            "/products",
+            "/products/:slug",
+            "/about",
+            "/services"
+          ],
+          "harnessSelfTests": 3,
+          "colourContrast": "not evaluated in jsdom; reason recorded in src/testing/accessibility.ts"
+        },
+        "lighthouse": {
+          "measured": false,
+          "reason": "no headless Chrome on this machine; see ASM-11. Bundle ceiling and server-rendered content measured instead."
+        },
+        "stubScan": {
+          "hits": 0,
+          "emptyCatch": 0,
+          "weakTests": 0,
+          "feBanned": 0,
+          "weakFeSpecs": 0,
+          "approvedExceptions": 0
+        },
+        "secretScan": {
+          "exit": 1,
+          "clean": true,
+          "pathspecExclusions": [
+            "backend/src/SoftwareManagement.Domain/Identity/LoginAttempt.cs"
+          ],
+          "canaryDetected": true
+        }
       },
       "errorBudget": {
         "signatures": {}

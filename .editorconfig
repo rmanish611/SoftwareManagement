@@ -55,8 +55,19 @@ dotnet_diagnostic.CA1707.severity = none
 # This is done with .editorconfig rather than <NoWarn> deliberately: a Directory.Build.props
 # placed inside a project subfolder is never read by MSBuild (it only searches upward from the
 # project file), so that approach silently does nothing. .editorconfig is genuinely path-scoped.
+# Treat the whole directory as generated so every analyser skips it, rather than listing rules
+# one at a time and rediscovering a new one on every migration.
+generated_code = true
 dotnet_diagnostic.IDE0161.severity = none
 dotnet_diagnostic.CS8618.severity = none
 dotnet_diagnostic.CS8625.severity = none
 dotnet_diagnostic.CA1861.severity = none
 dotnet_diagnostic.IDE0055.severity = none
+
+[backend/src/**.cs]
+# CA1711 reserves the suffix "Permission" for other purposes. Here `Permission` and
+# `RolePermission` are the names the approved data model and authorization matrix use
+# (03-data-model.md E-43/E-44, 06-authz.md), and the seeded table is called Permissions.
+# Renaming the type to satisfy a naming heuristic would make the code disagree with the
+# document it implements, so the suffix is allowed instead. No correctness rule is affected.
+dotnet_code_quality.CA1711.allowed_suffixes = Permission

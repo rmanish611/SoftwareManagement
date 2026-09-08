@@ -19,4 +19,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Identity's data-protection token providers (password reset, email confirmation) live in the
+         ASP.NET Core shared framework. Infrastructure is the layer that talks to the outside world,
+         so the reference belongs here; the architecture tests still forbid it in Domain and
+         Application. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
 </Project>

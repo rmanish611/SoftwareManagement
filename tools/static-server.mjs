@@ -53,8 +53,19 @@ createServer(async (req, res) => {
         return;
       }
 
-      filePath = join(root, 'index.html');
-      info = await stat(filePath);
+      // A prerendered route is written as <route>/index.html. Serving it, the way a real host
+      // does, is what makes the prerendered HTML testable; falling straight through to the root
+      // index.html would hide a prerender that silently stopped working.
+      const prerendered = join(filePath, 'index.html');
+      const prerenderedInfo = await stat(prerendered).catch(() => null);
+
+      if (prerenderedInfo?.isFile()) {
+        filePath = prerendered;
+        info = prerenderedInfo;
+      } else {
+        filePath = join(root, 'index.html');
+        info = await stat(filePath);
+      }
     }
 
     const body = await readFile(filePath);

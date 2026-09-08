@@ -500,3 +500,9 @@ appsettings.Production.json
 *.mdf
 *.ldf
 *.bak
+
+# Backend build and log output
+backend/**/logs/
+_publish/
+coverage/
+TestResults/

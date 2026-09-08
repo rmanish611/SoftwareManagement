@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+
+          <!--
+            EF Core's generated migration and model-snapshot files are excluded from coverage
+            instrumentation. They are not hand-written code and they are verified by a stronger
+            check than a unit test: the D4 database gate applies every migration to a real SQL
+            Server, asserts each expected table exists in sys.tables, and asserts the model has
+            no pending changes.
+
+            Including them would measure thousands of generated lines that no test should ever
+            execute directly, which would say nothing about the quality of the code we write.
+            Nothing hand-written is excluded here.
+          -->
+          <ExcludeByFile>**/Persistence/Migrations/*.cs</ExcludeByFile>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+          <Exclude>[*]SoftwareManagement.Infrastructure.Persistence.Migrations.*</Exclude>
+          <SkipAutoProps>true</SkipAutoProps>
+          <UseSourceLink>false</UseSourceLink>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

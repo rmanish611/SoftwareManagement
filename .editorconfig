@@ -37,3 +37,26 @@ csharp_prefer_braces = true:error
 dotnet_style_readonly_field = true:warning
 csharp_style_prefer_primary_constructors = false:suggestion
 dotnet_diagnostic.IDE0055.severity = warning
+
+[backend/tests/**.cs]
+# The exit gate (D3) requires test method names that carry the requirement id and the
+# expected outcome, for example REQ_LEAD_004_Returns400_WhenCaptchaTokenIsReplayed. That
+# naming is mandated by the approved protocol, so CA1707 (no underscores in member names)
+# is scoped off for test projects only. Production code keeps it at error.
+# This is a scope decision, not a suppression: no <NoWarn> and no #pragma exists anywhere.
+dotnet_diagnostic.CA1707.severity = none
+
+[backend/src/**/Persistence/Migrations/*.cs]
+# EF Core generates these files and they are frozen once applied: a mistake is corrected by a
+# new migration, never by hand-editing an applied one. Generated code cannot satisfy the style
+# and nullable analysers that hand-written source must satisfy, so the rules are scoped off
+# here and nowhere else.
+#
+# This is done with .editorconfig rather than <NoWarn> deliberately: a Directory.Build.props
+# placed inside a project subfolder is never read by MSBuild (it only searches upward from the
+# project file), so that approach silently does nothing. .editorconfig is genuinely path-scoped.
+dotnet_diagnostic.IDE0161.severity = none
+dotnet_diagnostic.CS8618.severity = none
+dotnet_diagnostic.CS8625.severity = none
+dotnet_diagnostic.CA1861.severity = none
+dotnet_diagnostic.IDE0055.severity = none

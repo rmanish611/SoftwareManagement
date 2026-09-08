@@ -39,15 +39,15 @@
   "schemaVersion": 2,
   "requirementsSha256": "B752D3F8174396AEC9C9730B4009F6E52ACC35CF5ECE34F366EB99CFFB69B5EF",
   "pass1Sha": "412d4e06ba28b6543992c23a18c110467c0f632e",
-  "lastUpdatedUtc": "2026-09-08T01:13:15.435Z",
+  "lastUpdatedUtc": "2026-09-08T01:42:07.306Z",
   "briefRevisedUtc": "2026-09-06T17:04:31.134Z",
   "protocolSha256": "2E34D263B3EC9816A115C7908D429DFF32AA9EE2FF1C7A51E3BA8AAFDA47FEEA",
   "intentLock": "Software Management is the corporate website of the owner's own software company. Its primary user is a prospective customer (an SMB owner or IT decision-maker in India first, global later) who wants to see what the company builds, open a live demo of a product such as the ERP or the hospital-management SaaS, and get in touch. The three most important jobs: (1) present the company and its product catalogue credibly, the way a large IT vendor does - company profile, services, technology stack, product pages with features, screenshots, plans, demo and API links, projects and case studies; (2) turn visitors into leads - contact, demo request, quote or tenant request - through spam-safe forms with notifications and a lead pipeline the owner works from the admin panel; (3) let the owner run the site and the sales record without a developer - CMS-style management of every public section plus recording the tenants and subscriptions sold and their lifecycle. Explicitly out of scope: licence-key delivery, a marketplace for third-party sellers, and the functionality of the SaaS products themselves.",
   "pass2Sha": "4a6bfe3c1183fc03ca72bbdecf39e6ee412f8ec8",
   "blueprintFrozen": true,
   "totalPhases": 14,
-  "currentPhase": 4,
-  "lastVerifiedPhase": 3,
+  "currentPhase": 5,
+  "lastVerifiedPhase": 4,
   "reqCount": 138,
   "mustCount": 98,
   "nfrCoverageFloor": 70,
@@ -99,7 +99,7 @@
   },
   "spawnedPids": [],
   "openBlockers": [],
-  "nextAction": "P04 B1: re-anchor, then build site content: pages and sections with the Draft/Modified/Published state machine, scheduled publish in the editor timezone, content versions with restore, navigation menus, services and technologies, the media library with magic-number validation and SkiaSharp resizing, SEO metadata with automatic 301 redirects on slug change, and the server-rendered public home, about, services and contact pages.",
+  "nextAction": "P05 B1: re-anchor, then build the product catalogue administration: products, categories, features, screenshots, pricing plans with the single-recommended-plan rule and the yearly-price sanity check, plan features, demo environments with credentials that never reach a log, and the admin screens for all of it.",
   "phases": [
     {
       "id": 1,
@@ -617,9 +617,9 @@
     {
       "id": 4,
       "name": "Site content and company profile",
-      "status": "PENDING",
-      "startedUtc": "",
-      "finishedUtc": "",
+      "status": "DONE",
+      "startedUtc": "2026-09-08T01:00:00Z",
+      "finishedUtc": "2026-09-08T01:42:07.302Z",
       "goal": "The company can publish its own pages, menus, services, stack, team and media, with versions, scheduling and SEO.",
       "reqIds": [
         "REQ-SITE-001",
@@ -723,7 +723,7 @@
       ],
       "rollback": "revert to the P03 tag, drop the content migration, restore the P03 database backup; identity is unaffected.",
       "evidenceDir": "_evidence/phase-04",
-      "gateAttempts": 0,
+      "gateAttempts": 1,
       "checkpoint": {
         "step": "",
         "stepStartedUtc": "",
@@ -734,13 +734,107 @@
         "packagesAdded": [],
         "spawnedPids": [],
         "recoveryStash": "",
-        "nextAction": "",
+        "nextAction": "P04 closed. Start P05 at B1.",
         "nextActionPrecondition": ""
       },
       "gate": {
-        "nonce": "",
-        "startedUtc": "",
-        "transcriptSha256": ""
+        "nonce": "c41f0a72",
+        "build": {
+          "exit": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "test": {
+          "exit": 0,
+          "total": 110,
+          "passed": 110,
+          "failed": 0,
+          "skipped": 0,
+          "frontend": 32,
+          "prev": 80,
+          "sacRetries": 0
+        },
+        "coverage": {
+          "line": 76.2,
+          "byPackage": {
+            "Application": 95.5,
+            "Domain": 82.1,
+            "Infrastructure": 81.9,
+            "Api": 66.8
+          }
+        },
+        "database": {
+          "exit": 0,
+          "migrationId": "20260908012351_AddSiteContent",
+          "tableCount": 27,
+          "pendingModelChanges": false
+        },
+        "publish": {
+          "exit": 0,
+          "dllBytes": 216576
+        },
+        "smokeApi": {
+          "health": 200,
+          "anonRoutesChecked": 4,
+          "anonFailures": 0,
+          "loginStatus": 200,
+          "probePostStatus": 201,
+          "publishStatus": 204,
+          "publicReadback": 200,
+          "dbProbeWrite": "OK",
+          "dbProbeRead": "OK",
+          "stoppedClean": true
+        },
+        "frontendBuild": {
+          "exit": 0,
+          "initialKb": 295.49,
+          "transferKb": 84.37,
+          "prerenderedRoutes": 0,
+          "renderMode": "server-per-request"
+        },
+        "frontendRender": {
+          "indexStatus": 200,
+          "appRootFound": true,
+          "ssrContent": true,
+          "about": 200,
+          "services": 200,
+          "adminLogin": 200,
+          "missingAsset404": true,
+          "missingDeepRoute": 200
+        },
+        "stubScan": {
+          "hits": 0,
+          "emptyCatch": 0,
+          "weakTests": 0,
+          "feBanned": 0,
+          "weakFeSpecs": 0,
+          "approvedExceptions": 0
+        },
+        "secretScan": {
+          "exit": 1,
+          "clean": true,
+          "pathspecExclusions": [
+            "backend/src/SoftwareManagement.Domain/Identity/LoginAttempt.cs"
+          ],
+          "canaryDetected": true
+        },
+        "git": {
+          "headSha": "10e4976af64818de5e882f27000bbe3a35e77762",
+          "remoteSha": "10e4976af64818de5e882f27000bbe3a35e77762",
+          "match": true,
+          "divergence": "0 0",
+          "tag": "phase-04-gate",
+          "tagOnRemote": true
+        },
+        "backup": {
+          "bytes": 633518,
+          "sha256": "12825F51E401ED4FFAC9069A0B83631DCB537AE6DAB122247554F54F9B9CF635",
+          "entries": 272,
+          "dbBakBytes": 6213632,
+          "restoreVerifyOnly": "PASS",
+          "bundleVerify": "okay",
+          "verifiedUtc": "2026-09-08T01:42:07.306Z"
+        }
       },
       "errorBudget": {
         "signatures": {}

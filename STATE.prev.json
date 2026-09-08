@@ -39,15 +39,15 @@
   "schemaVersion": 2,
   "requirementsSha256": "B752D3F8174396AEC9C9730B4009F6E52ACC35CF5ECE34F366EB99CFFB69B5EF",
   "pass1Sha": "412d4e06ba28b6543992c23a18c110467c0f632e",
-  "lastUpdatedUtc": "2026-09-08T00:31:08.930Z",
+  "lastUpdatedUtc": "2026-09-08T01:13:15.435Z",
   "briefRevisedUtc": "2026-09-06T17:04:31.134Z",
   "protocolSha256": "2E34D263B3EC9816A115C7908D429DFF32AA9EE2FF1C7A51E3BA8AAFDA47FEEA",
   "intentLock": "Software Management is the corporate website of the owner's own software company. Its primary user is a prospective customer (an SMB owner or IT decision-maker in India first, global later) who wants to see what the company builds, open a live demo of a product such as the ERP or the hospital-management SaaS, and get in touch. The three most important jobs: (1) present the company and its product catalogue credibly, the way a large IT vendor does - company profile, services, technology stack, product pages with features, screenshots, plans, demo and API links, projects and case studies; (2) turn visitors into leads - contact, demo request, quote or tenant request - through spam-safe forms with notifications and a lead pipeline the owner works from the admin panel; (3) let the owner run the site and the sales record without a developer - CMS-style management of every public section plus recording the tenants and subscriptions sold and their lifecycle. Explicitly out of scope: licence-key delivery, a marketplace for third-party sellers, and the functionality of the SaaS products themselves.",
   "pass2Sha": "4a6bfe3c1183fc03ca72bbdecf39e6ee412f8ec8",
   "blueprintFrozen": true,
   "totalPhases": 14,
-  "currentPhase": 3,
-  "lastVerifiedPhase": 2,
+  "currentPhase": 4,
+  "lastVerifiedPhase": 3,
   "reqCount": 138,
   "mustCount": 98,
   "nfrCoverageFloor": 70,
@@ -99,7 +99,7 @@
   },
   "spawnedPids": [],
   "openBlockers": [],
-  "nextAction": "P03 B1: re-anchor, then build identity: ASP.NET Core Identity with EF stores, JWT plus rotating refresh tokens with reuse detection, lockout after 5 failures in 15 minutes, the permission catalogue and the four seeded roles, password reset, the admin login screen and the role-aware admin shell, and the authorization matrix test harness that asserts every row of 06-authz.md against the real endpoints.",
+  "nextAction": "P04 B1: re-anchor, then build site content: pages and sections with the Draft/Modified/Published state machine, scheduled publish in the editor timezone, content versions with restore, navigation menus, services and technologies, the media library with magic-number validation and SkiaSharp resizing, SEO metadata with automatic 301 redirects on slug change, and the server-rendered public home, about, services and contact pages.",
   "phases": [
     {
       "id": 1,
@@ -389,9 +389,9 @@
     {
       "id": 3,
       "name": "Identity, roles and deny-by-default",
-      "status": "PENDING",
-      "startedUtc": "",
-      "finishedUtc": "",
+      "status": "DONE",
+      "startedUtc": "2026-09-08T00:20:00Z",
+      "finishedUtc": "2026-09-08T01:13:15.434Z",
       "goal": "Sign-in, roles, permissions and the security posture every later endpoint inherits.",
       "reqIds": [
         "REQ-IAM-001",
@@ -485,7 +485,7 @@
       ],
       "rollback": "revert the phase commits, drop the identity migration, restore the P02 backup; no other module depends on this phase yet.",
       "evidenceDir": "_evidence/phase-03",
-      "gateAttempts": 0,
+      "gateAttempts": 1,
       "checkpoint": {
         "step": "",
         "stepStartedUtc": "",
@@ -496,13 +496,118 @@
         "packagesAdded": [],
         "spawnedPids": [],
         "recoveryStash": "",
-        "nextAction": "",
+        "nextAction": "P03 closed. Start P04 at B1.",
         "nextActionPrecondition": ""
       },
       "gate": {
-        "nonce": "",
-        "startedUtc": "",
-        "transcriptSha256": ""
+        "nonce": "80d82b11",
+        "build": {
+          "exit": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "test": {
+          "exit": 0,
+          "total": 80,
+          "passed": 80,
+          "failed": 0,
+          "skipped": 0,
+          "frontend": 23,
+          "prev": 47,
+          "sacRetries": 0
+        },
+        "coverage": {
+          "line": 75.2,
+          "byPackage": {
+            "Application": 96,
+            "Domain": 83.9,
+            "Infrastructure": 82.7,
+            "Api": 55
+          }
+        },
+        "database": {
+          "exit": 0,
+          "migrationId": "20260908004331_AddIdentityAndPermissions",
+          "tablesVerified": [
+            "AspNetUsers",
+            "AspNetRoles",
+            "AspNetUserRoles",
+            "Permissions",
+            "RolePermissions",
+            "RefreshTokens",
+            "LoginAttempts",
+            "AuditLogs",
+            "SystemSettings"
+          ],
+          "pendingModelChanges": false
+        },
+        "publish": {
+          "exit": 0,
+          "dllBytes": 79360
+        },
+        "smokeApi": {
+          "health": 200,
+          "anonRoutesChecked": 4,
+          "anonFailures": 0,
+          "loginStatus": 200,
+          "tokenLength": 2540,
+          "probePostStatus": 201,
+          "dbProbeWrite": "OK",
+          "dbProbeRead": "OK",
+          "stoppedClean": true
+        },
+        "frontendBuild": {
+          "exit": 0,
+          "initialKb": 293.12,
+          "lazyChunks": 3,
+          "largestLazyKb": 41.8
+        },
+        "frontendRender": {
+          "indexStatus": 200,
+          "appRootFound": true,
+          "mainBytes": 125795,
+          "missingAsset404": true,
+          "adminLoginPrerendered": true,
+          "routesInBundle": [
+            "/admin/login",
+            "/admin"
+          ],
+          "selectorsInBundle": [
+            "app-root",
+            "app-shell",
+            "app-login",
+            "app-admin-shell"
+          ]
+        },
+        "stubScan": {
+          "hits": 0,
+          "emptyCatch": 0,
+          "weakTests": 0,
+          "feBanned": 0,
+          "weakFeSpecs": 0,
+          "approvedExceptions": 0
+        },
+        "secretScan": {
+          "exit": 1,
+          "clean": true
+        },
+        "git": {
+          "headSha": "4c9f7c2b64ec99faa1fb6e77eb2c4ebde7cc2211",
+          "remoteSha": "4c9f7c2b64ec99faa1fb6e77eb2c4ebde7cc2211",
+          "match": true,
+          "divergence": "0 0",
+          "tag": "phase-03-gate",
+          "tagOnRemote": true
+        },
+        "backup": {
+          "bytes": 543988,
+          "sha256": "65CDA4D718A4788BB84828A6532CDCD7758AF44C82E8BB0CC465CEEF3656D9CD",
+          "entries": 233,
+          "dbBakBytes": 5230592,
+          "restoreVerifyOnly": "PASS",
+          "bundleVerify": "okay",
+          "verifiedUtc": "2026-09-08T01:13:15.435Z"
+        }
       },
       "errorBudget": {
         "signatures": {}

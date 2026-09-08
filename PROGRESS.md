@@ -129,3 +129,45 @@ tests naming it.
   seeding routine, which is what production needs the first time it runs two instances. ASM-9.
 - The anti-stub scan caught an empty catch block in that new lock class. The code was fixed to log
   the reason; the scan was not touched.
+
+## P04 - Site content and company profile - DONE (2026-09-08)
+
+Pages with the three-state publishing model, scheduling in the editor's timezone, versioned
+restore, slug rules with automatic 301 redirects, a media library that identifies uploads by their
+bytes and resizes with SkiaSharp, navigation that hides links to unpublished pages, services with a
+technology stack, team members and testimonials with recorded permission, and the public about and
+services pages rendered on the server. 110 backend and 32 frontend tests pass.
+
+### Defects the tests caught, all real
+
+1. **The public endpoint served the draft, not the published version.** The Modified state existed
+   in the model but meant nothing in practice: an editor rewriting a live page would have shown a
+   visitor a half-finished sentence immediately. The public endpoint now serves the snapshot written
+   at the last publish, which is what the content versions are for.
+2. **A bulk-publish outcome serialised as an enum number.** A client switching on that number would
+   break the first time a value was inserted into the middle of the enum. It carries the name now.
+3. **An explicitly typed slug was silently truncated** to 120 characters instead of being refused,
+   so the address the editor asked for would quietly become a different one. A typed slug is now
+   validated as typed; only a slug derived from the title is shortened.
+
+### Server-side rendering, made real
+
+Prerendering at build time failed outright, because the build machine has no API to call. Public
+routes now render per request, which is also what makes a page published at 09:00 live at 09:00
+rather than at the next deployment. Two further things were needed to make that honest:
+
+- Angular refuses to render a request whose Host header it does not recognise, its protection
+  against server-side request forgery. The allowed hosts now come from configuration, so a
+  deployment lists its own hostname without a rebuild.
+- A request for a missing asset answered 200 with HTML, which a browser would try to execute as
+  JavaScript. Anything with a file extension that express.static did not serve is now a 404.
+
+The render proof itself was upgraded: it runs `dist/server/server.mjs`, the process production runs,
+against the live API, rather than a static file server.
+
+### Secret scan
+
+The staged-index scan flagged `WrongPassword = "wrong_password"`, an audit reason code. Following
+the protocol, exactly that one file is excluded by pathspec and the exclusion is documented in
+`docs/EXCEPTIONS.md`; the pattern itself was not relaxed, and a canary line proved the detector
+still fires.

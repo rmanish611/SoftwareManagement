@@ -10,4 +10,4 @@ P02 | DONE | tag phase-02-closed | sha 0655d9f | no REQ rows (walking skeleton) 
 P03 | DONE | tag phase-03-closed | sha 4c9f7c2 | REQ-IAM-001..012 | tests 80 BE + 23 FE | cov 75.2% | ADR-R02, ADR-R03 | BLK: none | next: P04 start B1
 P04 | DONE | tag phase-04-closed | sha 10e4976 | REQ-SITE-001..012 | tests 110 BE + 32 FE | cov 76.2% | ADR-R01..R03 | BLK: none | next: P05 start B1
 P05 | DONE | tag phase-05-closed | sha 351dfd7 | REQ-CAT-001..008 | tests 129 BE + 47 FE | cov 75.6% | ADR-R04 | BLK: none | next: P06 start B1
-P06 | DONE | tag phase-06-closed | sha PENDING | REQ-CAT-009..015 | tests 145 BE + 70 FE | cov 76.5% | ADR-R05 | BLK: none | next: P07 start B1
+P06 | DONE | tag phase-06-closed | sha 255ce43 | REQ-CAT-009..015 | tests 145 BE + 70 FE | cov 76.5% | ADR-R05 | BLK: none | next: P07 start B1

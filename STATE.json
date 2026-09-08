@@ -39,15 +39,15 @@
   "schemaVersion": 2,
   "requirementsSha256": "B752D3F8174396AEC9C9730B4009F6E52ACC35CF5ECE34F366EB99CFFB69B5EF",
   "pass1Sha": "412d4e06ba28b6543992c23a18c110467c0f632e",
-  "lastUpdatedUtc": "2026-09-08T00:29:46.395Z",
+  "lastUpdatedUtc": "2026-09-08T00:31:08.930Z",
   "briefRevisedUtc": "2026-09-06T17:04:31.134Z",
   "protocolSha256": "2E34D263B3EC9816A115C7908D429DFF32AA9EE2FF1C7A51E3BA8AAFDA47FEEA",
   "intentLock": "Software Management is the corporate website of the owner's own software company. Its primary user is a prospective customer (an SMB owner or IT decision-maker in India first, global later) who wants to see what the company builds, open a live demo of a product such as the ERP or the hospital-management SaaS, and get in touch. The three most important jobs: (1) present the company and its product catalogue credibly, the way a large IT vendor does - company profile, services, technology stack, product pages with features, screenshots, plans, demo and API links, projects and case studies; (2) turn visitors into leads - contact, demo request, quote or tenant request - through spam-safe forms with notifications and a lead pipeline the owner works from the admin panel; (3) let the owner run the site and the sales record without a developer - CMS-style management of every public section plus recording the tenants and subscriptions sold and their lifecycle. Explicitly out of scope: licence-key delivery, a marketplace for third-party sellers, and the functionality of the SaaS products themselves.",
   "pass2Sha": "4a6bfe3c1183fc03ca72bbdecf39e6ee412f8ec8",
   "blueprintFrozen": true,
   "totalPhases": 14,
-  "currentPhase": 2,
-  "lastVerifiedPhase": 1,
+  "currentPhase": 3,
+  "lastVerifiedPhase": 2,
   "reqCount": 138,
   "mustCount": 98,
   "nfrCoverageFloor": 70,
@@ -99,7 +99,7 @@
   },
   "spawnedPids": [],
   "openBlockers": [],
-  "nextAction": "P02 B1: re-anchor, then scaffold backend/src {Domain,Application,Infrastructure,Api} and backend/tests, the Angular 22 workspace with SSR in frontend/, Directory.Build.props with TreatWarningsAsErrors, angular.json budgets frozen at 500 KB initial and 250 KB lazy, tools/static-server.mjs, Serilog, the ProblemDetails handler and the health endpoints. Never build backend and frontend at the same time.",
+  "nextAction": "P03 B1: re-anchor, then build identity: ASP.NET Core Identity with EF stores, JWT plus rotating refresh tokens with reuse detection, lockout after 5 failures in 15 minutes, the permission catalogue and the four seeded roles, password reset, the admin login screen and the role-aware admin shell, and the authorization matrix test harness that asserts every row of 06-authz.md against the real endpoints.",
   "phases": [
     {
       "id": 1,
@@ -205,9 +205,9 @@
     {
       "id": 2,
       "name": "Walking skeleton",
-      "status": "PENDING",
-      "startedUtc": "",
-      "finishedUtc": "",
+      "status": "DONE",
+      "startedUtc": "2026-09-07T23:45:00Z",
+      "finishedUtc": "2026-09-08T00:31:08.929Z",
       "goal": "Create the full solution, the Angular workspace and the frozen guardrails, with a running published API and a rendering Angular shell.",
       "reqIds": [],
       "nfrIds": [
@@ -271,7 +271,7 @@
       ],
       "rollback": "delete `backend/` and `frontend/`, drop the database, reset to the P01 tag, and re-scaffold; nothing outside the repository is touched.",
       "evidenceDir": "_evidence/phase-02",
-      "gateAttempts": 0,
+      "gateAttempts": 1,
       "checkpoint": {
         "step": "",
         "stepStartedUtc": "",
@@ -282,13 +282,104 @@
         "packagesAdded": [],
         "spawnedPids": [],
         "recoveryStash": "",
-        "nextAction": "",
+        "nextAction": "P02 closed. Start P03 at B1.",
         "nextActionPrecondition": ""
       },
       "gate": {
-        "nonce": "",
-        "startedUtc": "",
-        "transcriptSha256": ""
+        "nonce": "384a5d01",
+        "startedUtc": "2026-09-07T23:45:00Z",
+        "restore": {
+          "exit": 0
+        },
+        "build": {
+          "exit": 0,
+          "warnings": 0,
+          "errors": 0
+        },
+        "test": {
+          "exit": 0,
+          "total": 47,
+          "passed": 47,
+          "failed": 0,
+          "skipped": 0,
+          "frontend": 6,
+          "integrationCategory": 4
+        },
+        "coverage": {
+          "line": 79.8,
+          "byPackage": {
+            "Domain": 100,
+            "Application": 96.6,
+            "Api": 90,
+            "Infrastructure": 63.6
+          }
+        },
+        "database": {
+          "exit": 0,
+          "migrationId": "20260907235012_InitialCreate",
+          "engine": "Microsoft SQL Server 2025 (RTM) - 17.0.1000.7"
+        },
+        "publish": {
+          "exit": 0,
+          "dllBytes": 43520
+        },
+        "smokeApi": {
+          "health": 200,
+          "live": 200,
+          "ready": 200,
+          "anonSecure": 401,
+          "anonPublic": 200,
+          "badToken": 401,
+          "unknownRoute": 404,
+          "stoppedClean": true
+        },
+        "frontendBuild": {
+          "exit": 0,
+          "initialKb": 244,
+          "lazyChunks": 0,
+          "ceilingInitialKb": 500,
+          "ceilingLazyKb": 250
+        },
+        "frontendRender": {
+          "indexStatus": 200,
+          "appRootFound": true,
+          "prerenderedShell": true,
+          "mainStatus": 200,
+          "mainBytes": 103473,
+          "missingAsset404": true,
+          "renderTest": true
+        },
+        "stubScan": {
+          "hits": 0,
+          "emptyCatch": 0,
+          "weakTests": 0,
+          "feBanned": 0,
+          "weakFeSpecs": 0,
+          "approvedExceptions": 0
+        },
+        "secretScan": {
+          "exit": 1,
+          "clean": true
+        },
+        "git": {
+          "headSha": "0655d9f78585c586f243675f10fcf27b2f53952c",
+          "remoteSha": "0655d9f78585c586f243675f10fcf27b2f53952c",
+          "match": true,
+          "porcelainClean": true,
+          "divergence": "0 0",
+          "tag": "phase-02-gate",
+          "tagOnRemote": true
+        },
+        "backup": {
+          "zip": "G:_backupssoftware-managementsrc-phase-02-20260908-060032.zip",
+          "bytes": 448179,
+          "sha256": "675ED1ECB9818F2164E5BF979528521709284319915E2B02C307D5F09A39C7AB",
+          "entries": 173,
+          "dbBak": "SoftwareManagementDb-phase-02-20260908-060032.bak",
+          "restoreVerifyOnly": "PASS",
+          "bundleVerify": "okay",
+          "verifiedUtc": "2026-09-08T00:31:08.930Z"
+        }
       },
       "errorBudget": {
         "signatures": {}

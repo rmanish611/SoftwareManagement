@@ -48,3 +48,50 @@ Earlier in the session the remote repository disappeared (push and ls-remote bot
 "Repository not found" although a push to the same URL had succeeded minutes before). The
 run was halted per HARD STOP #1 with the state persisted and a verified git bundle written,
 and resumed once the owner recreated the repository. No work was lost.
+
+## P02 - Walking skeleton - DONE (2026-09-08)
+
+Backend: four projects with dependencies pointing inward, enforced by seven architecture tests
+that read both the compiled assemblies and the project files. Serilog structured JSON logging,
+RFC 9457 problem details with a traceId and no stack trace, five security headers on every
+response including errors, JWT bearer authentication where every controller endpoint requires
+authorization unless it opts out, liveness and readiness probes that behave differently on
+purpose, and the initial EF Core migration.
+
+Frontend: Angular 22 with server-side rendering and prerendering, a shell with a skip link and
+a main landmark, design tokens as the only source of colour and spacing, ESLint provisioned
+without a prompt, Vitest as the runner, and the 500 kB initial ceiling frozen in angular.json
+with the per-lazy-chunk ceiling enforced by a script over the real build output.
+
+47 backend tests and 6 frontend tests pass, none skipped. Merged coverage 79.8% against the
+70% floor.
+
+### Three defects found and fixed inside the gate, none by weakening a check
+
+1. **Every unknown route answered 401 instead of 404.** A global authorization fallback policy
+   also applies to requests that match no endpoint, so a routing mistake would have been hidden
+   behind an authentication error for the rest of the build. The policy now attaches to the
+   mapped controller endpoints instead, which keeps deny-by-default and restores a real 404.
+2. **The architecture test asserted the wrong thing.** It read the compiled assembly for a
+   reference that the C# compiler legitimately omits when no type from that assembly is used,
+   so it reported a violation that did not exist. Required dependencies are now asserted against
+   the project files and forbidden ones against the compiled assemblies, which is the correct
+   source of truth for each direction.
+3. **Coverage was measured against generated code.** EF Core's model snapshot is 1,610 of 1,994
+   lines; including it reported 14.9% and said nothing about the code we write. Generated
+   migrations are now excluded from instrumentation and verified by the database gate instead.
+
+### Environment findings
+
+- **LocalDB stopped answering on its own named pipe.** `sqllocaldb info` reported Running and
+  published a pipe name; connections to that pipe, to `(localdb)\MSSQLLocalDB`, and from the EF
+  tooling all failed with Named Pipes error 40, while the already-running SQL Express instance
+  answered immediately and turned out to be SQL Server 2025. ADR-00 names Express as the
+  permitted alternative, so development moved there. Recorded as ADR-R01 and ASM-1.
+- **Angular 22 requires a newer Node than this machine has** (24.15.0 minimum against 24.13.0).
+  A system upgrade would change every other project on the machine, so Node 24.20.0 is kept
+  project-local under `tools/node`, verified against the official SHA-256 checksum, gitignored,
+  and restored by `tools/get-node.ps1`. Recorded as ASM-2.
+- **Windows Smart App Control briefly blocked the test host from loading the API assembly**
+  (`An Application Control policy has blocked this file`). A clean rebuild of that project
+  resolved it; no security setting was changed.

@@ -25,7 +25,7 @@ import { AuthService } from '../../core/auth/auth.service';
 
         <div class="admin__user">
           <span data-testid="signed-in-as">{{ auth.user()?.fullName }}</span>
-          <button type="button" (click)="signOut()">Sign out</button>
+          <button type="button" class="button" (click)="signOut()">Sign out</button>
         </div>
       </header>
 
@@ -82,17 +82,6 @@ import { AuthService } from '../../core/auth/auth.service';
       align-items: center;
       display: flex;
       gap: var(--space-3);
-    }
-
-    .admin__user button {
-      background: none;
-      border: 1px solid var(--colour-border);
-      border-radius: var(--radius-sm);
-      color: inherit;
-      cursor: pointer;
-      font: inherit;
-      min-height: 2rem;
-      padding: var(--space-1) var(--space-3);
     }
 
     .admin__main {

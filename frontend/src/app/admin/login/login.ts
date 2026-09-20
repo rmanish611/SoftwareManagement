@@ -48,7 +48,7 @@ import { AuthService } from '../../core/auth/auth.service';
           <p class="form-error" role="alert" data-testid="login-error">{{ message }}</p>
         }
 
-        <button type="submit" [disabled]="busy()">
+        <button type="submit" class="button button--primary" [disabled]="busy()">
           {{ busy() ? 'Signing in…' : 'Sign in' }}
         </button>
       </form>
@@ -70,32 +70,13 @@ import { AuthService } from '../../core/auth/auth.service';
       margin-top: var(--space-3);
     }
 
-    input {
-      background: var(--colour-background);
-      border: 1px solid var(--colour-border);
-      border-radius: var(--radius-sm);
-      color: var(--colour-text);
-      font: inherit;
-      min-height: 2.5rem;
-      padding: var(--space-2) var(--space-3);
-    }
-
     button {
-      background: var(--colour-accent);
-      border: none;
-      border-radius: var(--radius-sm);
-      color: var(--colour-accent-contrast);
-      cursor: pointer;
-      font: inherit;
-      font-weight: 600;
       margin-top: var(--space-4);
-      min-height: 2.75rem;
-      padding: var(--space-2) var(--space-4);
     }
 
+    /* Waiting on the server, rather than refused: the cursor says which. */
     button[disabled] {
       cursor: progress;
-      opacity: 0.7;
     }
 
     .field-error,

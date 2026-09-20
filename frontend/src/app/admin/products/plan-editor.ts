@@ -134,12 +134,12 @@ import { CatalogService, NewPlan, PricingPlan, problemMessage } from '../../core
     }
 
     .warning {
-      color: var(--colour-warning, #8a5300);
+      color: var(--colour-warning);
       max-width: 60ch;
     }
 
     .error {
-      color: var(--colour-danger, #a11);
+      color: var(--colour-danger);
       max-width: 60ch;
     }
   `,

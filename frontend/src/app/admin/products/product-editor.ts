@@ -126,7 +126,7 @@ import { PlanEditor } from './plan-editor';
     }
 
     .error {
-      color: var(--colour-danger, #a11);
+      color: var(--colour-danger);
       max-width: 60ch;
     }
   `,

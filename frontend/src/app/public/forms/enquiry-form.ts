@@ -123,7 +123,12 @@ import { ConsentField } from './consent-field';
               <p class="error" role="alert" data-testid="enquiry-error">{{ error() }}</p>
             }
 
-            <button type="submit" data-testid="enquiry-submit" [disabled]="sending()">
+            <button
+              type="submit"
+              class="button button--primary"
+              data-testid="enquiry-submit"
+              [disabled]="sending()"
+            >
               {{ sending() ? 'Sending' : definition.submitLabel }}
             </button>
           </form>
@@ -148,7 +153,7 @@ import { ConsentField } from './consent-field';
     }
 
     .required {
-      color: var(--colour-danger, #a11);
+      color: var(--colour-danger);
     }
 
     /* Off screen rather than display:none, so a bot that reads the markup still finds it. */
@@ -158,18 +163,8 @@ import { ConsentField } from './consent-field';
       top: -9999px;
     }
 
-    .visually-hidden {
-      clip: rect(0 0 0 0);
-      clip-path: inset(50%);
-      height: 1px;
-      overflow: hidden;
-      position: absolute;
-      white-space: nowrap;
-      width: 1px;
-    }
-
     .error {
-      color: var(--colour-danger, #a11);
+      color: var(--colour-danger);
       max-width: 60ch;
     }
 
@@ -178,15 +173,7 @@ import { ConsentField } from './consent-field';
     }
 
     button[type='submit'] {
-      background: var(--colour-accent, #0b5cab);
-      border: none;
-      border-radius: var(--radius-sm);
-      color: #fff;
-      cursor: pointer;
-      font: inherit;
       margin-top: var(--space-4);
-      min-height: 2.75rem;
-      padding: 0 var(--space-5);
     }
   `,
 })

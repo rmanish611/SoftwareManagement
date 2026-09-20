@@ -16,7 +16,7 @@ import { AuthService } from '../../core/auth/auth.service';
       <header class="head">
         <h1>Products</h1>
         @if (auth.can('catalog.product.write')) {
-          <a class="primary" routerLink="/admin/products/new" data-testid="new-product">New product</a>
+          <a class="button button--primary" routerLink="/admin/products/new" data-testid="new-product">New product</a>
         }
       </header>
 
@@ -97,26 +97,6 @@ import { AuthService } from '../../core/auth/auth.service';
       font-size: 0.8rem;
     }
 
-    .primary {
-      background: var(--colour-accent, #0b5cab);
-      border-radius: var(--radius-sm);
-      color: #fff;
-      display: inline-flex;
-      min-height: 2.25rem;
-      align-items: center;
-      padding: 0 var(--space-4);
-      text-decoration: none;
-    }
-
-    .visually-hidden {
-      clip: rect(0 0 0 0);
-      clip-path: inset(50%);
-      height: 1px;
-      overflow: hidden;
-      position: absolute;
-      white-space: nowrap;
-      width: 1px;
-    }
   `,
 })
 export class ProductList {

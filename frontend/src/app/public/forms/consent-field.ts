@@ -55,7 +55,7 @@ import { Component, input, model } from '@angular/core';
     }
 
     .error {
-      color: var(--colour-danger, #a11);
+      color: var(--colour-danger);
       max-width: 60ch;
     }
   `,

@@ -34,12 +34,12 @@ import { PlanTable } from './plan-table';
           <p class="tagline">{{ item.tagline }}</p>
 
           <div class="actions">
-            <a class="action action--primary" routerLink="/contact" [queryParams]="{ product: item.slug }" data-testid="enquire">
+            <a class="button button--primary" routerLink="/contact" [queryParams]="{ product: item.slug }" data-testid="enquire">
               Ask about {{ item.name }}
             </a>
 
             @if (item.demo) {
-              <a class="action" [href]="item.demo.url" rel="noopener" target="_blank" data-testid="try-demo">
+              <a class="button" [href]="item.demo.url" rel="noopener" target="_blank" data-testid="try-demo">
                 Try the live demo
               </a>
             }
@@ -134,23 +134,6 @@ import { PlanTable } from './plan-table';
       flex-wrap: wrap;
       gap: var(--space-3);
       margin: var(--space-4) 0;
-    }
-
-    .action {
-      align-items: center;
-      border: 1px solid var(--colour-border);
-      border-radius: var(--radius-sm);
-      color: inherit;
-      display: inline-flex;
-      min-height: 2.75rem;
-      padding: 0 var(--space-5);
-      text-decoration: none;
-    }
-
-    .action--primary {
-      background: var(--colour-accent, #0b5cab);
-      border-color: transparent;
-      color: #fff;
     }
 
     .features {

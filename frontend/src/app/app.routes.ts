@@ -33,6 +33,21 @@ export const routes: Routes = [
     loadComponent: () => import('./public/products/product-detail').then((m) => m.ProductDetail),
   },
   {
+    path: 'contact',
+    loadComponent: () => import('./public/forms/contact-form').then((m) => m.ContactForm),
+    title: 'Talk to us',
+  },
+  {
+    path: 'request-demo',
+    loadComponent: () => import('./public/forms/demo-request').then((m) => m.DemoRequest),
+    title: 'See it working',
+  },
+  {
+    path: 'request-quote',
+    loadComponent: () => import('./public/forms/quote-request').then((m) => m.QuoteRequest),
+    title: 'Get a price',
+  },
+  {
     path: 'admin/login',
     loadComponent: () => import('./admin/login/login').then((m) => m.Login),
     title: 'Sign in',

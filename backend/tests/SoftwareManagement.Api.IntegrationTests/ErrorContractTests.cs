@@ -13,32 +13,21 @@ namespace SoftwareManagement.Api.IntegrationTests;
 /// </summary>
 public sealed class ErrorContractTests
 {
-    private sealed class DiagnosticsEnabledFactory : WebApplicationFactory<Program>
+    /// <summary>
+    /// The same pipeline as <see cref="ApiFactory"/> with the deliberate-failure endpoint switched
+    /// on, so the error contract can be asserted against a real unhandled exception.
+    /// </summary>
+    private sealed class DiagnosticsEnabledFactory : ConfiguredApiFactory
     {
-        public DiagnosticsEnabledFactory()
-        {
-            Environment.SetEnvironmentVariable("ConnectionStrings__Default", ApiFactory.TestConnectionString);
-            Environment.SetEnvironmentVariable("Jwt__Key", ApiFactory.TestSigningKey);
-            Environment.SetEnvironmentVariable("Jwt__Issuer", ApiFactory.TestIssuer);
-            Environment.SetEnvironmentVariable("Jwt__Audience", ApiFactory.TestAudience);
-            Environment.SetEnvironmentVariable("Diagnostics__EnableThrowEndpoint", "true");
-        }
-
-        protected override void ConfigureWebHost(IWebHostBuilder builder)
-        {
-            ArgumentNullException.ThrowIfNull(builder);
-            builder.UseEnvironment(Environments.Production);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
+        protected override IReadOnlyDictionary<string, string?> Settings { get; } =
+            new Dictionary<string, string?>(StringComparer.Ordinal)
             {
-                Environment.SetEnvironmentVariable("Diagnostics__EnableThrowEndpoint", null);
-            }
-
-            base.Dispose(disposing);
-        }
+                ["ConnectionStrings__Default"] = ApiFactory.TestConnectionString,
+                ["Jwt__Key"] = ApiFactory.TestSigningKey,
+                ["Jwt__Issuer"] = ApiFactory.TestIssuer,
+                ["Jwt__Audience"] = ApiFactory.TestAudience,
+                ["Diagnostics__EnableThrowEndpoint"] = "true",
+            };
     }
 
     [Fact]

@@ -60,7 +60,13 @@ public sealed class PublicCatalogTests(ContentFixture fixture)
         published.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         using var anonymous = _fixture.CreateClient();
-        var cards = await anonymous.GetFromJsonAsync<List<CatalogArrange.PublicCard>>("/api/v1/public/products");
+
+        // Asked for by name rather than read off the first page. The catalogue returns 24 cards a
+        // page, and this fixture's database keeps every product the suite has ever created, so the
+        // unfiltered first page stopped containing anything published recently - a failure that
+        // says the catalogue is paginated, not that publishing failed.
+        var cards = await anonymous.GetFromJsonAsync<List<CatalogArrange.PublicCard>>(
+            $"/api/v1/public/products?search={nonce}");
         cards!.Select(c => c.Slug).Should().Contain(product.Slug);
 
         var page = await anonymous.GetAsync($"/api/v1/public/products/{product.Slug}");

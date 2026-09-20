@@ -54,6 +54,8 @@ public sealed partial class DatabaseSeeder(
         await SeedRolePermissionsAsync(cancellationToken).ConfigureAwait(false);
         await SeedSettingsAsync(cancellationToken).ConfigureAwait(false);
         await SeedProductCategoriesAsync(cancellationToken).ConfigureAwait(false);
+        await SeedEmailTemplatesAsync(cancellationToken).ConfigureAwait(false);
+        await SeedFormsAsync(cancellationToken).ConfigureAwait(false);
         await SeedOwnerAsync().ConfigureAwait(false);
     }
 
@@ -156,6 +158,8 @@ public sealed partial class DatabaseSeeder(
             ("sla.businessHoursEnd", "18:00", SettingValueType.Text, "Service level"),
             ("sla.workingDays", "Mon,Tue,Wed,Thu,Fri,Sat", SettingValueType.Text, "Service level"),
             ("sla.firstResponseHours", "9", SettingValueType.Number, "Service level"),
+            ("notify.ownerEmail", _configuration["Seed:OwnerEmail"] ?? "owner@softwaremanagement.test", SettingValueType.Text, "Notifications"),
+            ("notify.fromEmail", "no-reply@softwaremanagement.example", SettingValueType.Text, "Notifications"),
         ];
 
         var existing = await _dbContext.SystemSettings
@@ -270,6 +274,12 @@ public sealed partial class DatabaseSeeder(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Seeded {count} permissions.")]
     private static partial void LogSeededPermissions(ILogger logger, int count);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Seeded {count} public forms.")]
+    private static partial void LogSeededForms(ILogger logger, int count);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Seeded {count} email templates.")]
+    private static partial void LogSeededTemplates(ILogger logger, int count);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Seeded {count} product categories.")]
     private static partial void LogSeededProductCategories(ILogger logger, int count);

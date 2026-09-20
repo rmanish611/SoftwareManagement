@@ -15,7 +15,7 @@ namespace SoftwareManagement.Api.IntegrationTests.Identity;
 /// user per role. Passwords here are test fixtures, not secrets: the database is created and
 /// dropped by the test run and grants access to nothing.
 /// </summary>
-public sealed class IdentityFixture : WebApplicationFactory<Program>, IAsyncLifetime
+public sealed class IdentityFixture : ConfiguredApiFactory, IAsyncLifetime
 {
     public const string DatabaseName = "SoftwareManagementDb_Identity";
 
@@ -32,22 +32,17 @@ public sealed class IdentityFixture : WebApplicationFactory<Program>, IAsyncLife
 
     public const string WrongPassword = "Definitely-Wrong-2026";
 
-    public IdentityFixture()
-    {
-        Environment.SetEnvironmentVariable("ConnectionStrings__Default", ConnectionString);
-        Environment.SetEnvironmentVariable("Jwt__Key", ApiFactory.TestSigningKey);
-        Environment.SetEnvironmentVariable("Jwt__Issuer", ApiFactory.TestIssuer);
-        Environment.SetEnvironmentVariable("Jwt__Audience", ApiFactory.TestAudience);
-        Environment.SetEnvironmentVariable("Database__MigrateOnStartup", "true");
-        Environment.SetEnvironmentVariable("Seed__OwnerEmail", OwnerEmail);
-        Environment.SetEnvironmentVariable("Seed__OwnerPassword", GoodPassword);
-    }
-
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
-        builder.UseEnvironment(Environments.Production);
-    }
+    protected override IReadOnlyDictionary<string, string?> Settings { get; } =
+        new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["ConnectionStrings__Default"] = ConnectionString,
+            ["Jwt__Key"] = ApiFactory.TestSigningKey,
+            ["Jwt__Issuer"] = ApiFactory.TestIssuer,
+            ["Jwt__Audience"] = ApiFactory.TestAudience,
+            ["Database__MigrateOnStartup"] = "true",
+            ["Seed__OwnerEmail"] = OwnerEmail,
+            ["Seed__OwnerPassword"] = GoodPassword,
+        };
 
     public async Task InitializeAsync()
     {

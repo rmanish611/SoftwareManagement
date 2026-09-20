@@ -23,5 +23,10 @@ amendment in `docs/blueprint/04a-amendments.md` with an ADR written first.
 
 ## Noticed during the build
 
-Nothing yet. An entry added here during a phase must name the phase, the file it was
+An entry added here during a phase must name the phase, the file it was
 noticed in, and why it was not built then.
+
+| Phase | Noticed in | Item | Why not fixed then |
+|---|---|---|---|
+| P07 | `scripts/` | The secret scan is retyped from the protocol at every gate instead of living in a script, so its pathspec and its quoting drift between runs. Run as written in §12 it flags four hits that are not secrets: `ProductsController.cs:607` assigns one property to another and names no literal, and `phase-smoke.ps1` / `render-proof.ps1` build a throwaway signing key from the run's nonce. Each needs either an `EXCEPTIONS.md` row or a `scripts/secret-scan.ps1` that every gate invokes identically. | Out of scope for the lead-capture phase, and the hits predate it: none of the four files is in the P07 change. Fixing the detector is a guardrail change, which belongs to its own commit with its own canary proof. |
+| P07 | `backend/tests/.../Content/ContentFixture.cs` | The content test database keeps every product, page and media row the suite has ever created. It already broke `REQ_CAT_009` once the catalogue's first page of 24 filled with older test products, which is now avoided by asking for the product by name. It will keep growing and it slows the suite. | `LeadFixture` clears its own tables because two rules under test count rows over a window. The content fixture has no such rule, so the growth is cost rather than correctness, and truncating a shared content database needs care over the seeded rows the catalogue tests rely on. |

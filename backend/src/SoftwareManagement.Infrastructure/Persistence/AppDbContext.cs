@@ -6,6 +6,8 @@ using SoftwareManagement.Domain.Catalog;
 using SoftwareManagement.Domain.Common;
 using SoftwareManagement.Domain.Content;
 using SoftwareManagement.Domain.Identity;
+using SoftwareManagement.Domain.Leads;
+using SoftwareManagement.Domain.Notifications;
 using SoftwareManagement.Domain.Settings;
 
 namespace SoftwareManagement.Infrastructure.Persistence;
@@ -75,6 +77,22 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IClock clock)
     public DbSet<FaqItem> FaqItems => Set<FaqItem>();
 
     public DbSet<PageViewStat> PageViewStats => Set<PageViewStat>();
+
+    public DbSet<Lead> Leads => Set<Lead>();
+
+    public DbSet<FormDefinition> FormDefinitions => Set<FormDefinition>();
+
+    public DbSet<FormField> FormFields => Set<FormField>();
+
+    public DbSet<FormSubmission> FormSubmissions => Set<FormSubmission>();
+
+    public DbSet<ConsentRecord> ConsentRecords => Set<ConsentRecord>();
+
+    public DbSet<OutboxEmail> OutboxEmails => Set<OutboxEmail>();
+
+    public DbSet<EmailDeliveryLog> EmailDeliveryLogs => Set<EmailDeliveryLog>();
+
+    public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

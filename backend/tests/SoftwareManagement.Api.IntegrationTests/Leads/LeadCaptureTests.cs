@@ -326,6 +326,43 @@ public sealed class LeadCaptureTests(LeadFixture fixture)
     }
 
     [Fact]
+    public async Task REQ_LEAD_007_The_same_person_writing_again_about_something_else_is_a_second_enquiry()
+    {
+        var nonce = LeadArrange.Nonce();
+        using var client = _fixture.ClientFrom(LeadArrange.Address(nonce));
+
+        var first = await client.PostAsJsonAsync("/api/v1/public/forms/contact/submit", LeadArrange.ContactBody(nonce));
+        first.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        var firstReference = (await first.Content.ReadFromJsonAsync<LeadArrange.SubmitRow>())!.Reference;
+
+        // Same person, same address, different question. The duplicate check hashes the message
+        // along with the contact details precisely so this is not swallowed: a customer who writes
+        // twice about two things has asked two things, and collapsing them loses one of them.
+        var different = LeadArrange.ContactBody(nonce);
+        different.CaptchaToken = LeadArrange.Token(nonce + "-third");
+        different.Answers["message"] = $"A second, unrelated question about pricing, reference {nonce}.";
+
+        var second = await client.PostAsJsonAsync("/api/v1/public/forms/contact/submit", different);
+        second.StatusCode.Should().Be(HttpStatusCode.Accepted);
+
+        var secondReference = (await second.Content.ReadFromJsonAsync<LeadArrange.SubmitRow>())!.Reference;
+        secondReference.Should().NotBe(firstReference);
+
+        using var scope = _fixture.NewScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var leads = await db.Leads.AsNoTracking().Where(l => l.FullName == $"PROBE-{nonce}").ToListAsync();
+        leads.Should().HaveCount(2);
+
+        // Both get an acknowledgement, because both are enquiries someone is waiting on.
+        var acknowledged = await db.OutboxEmails.AsNoTracking()
+            .CountAsync(o => leads.Select(l => l.Id).Contains(o.RelatedEntityId!.Value)
+                && o.TemplateKey == EmailTemplate.LeadAcknowledgement);
+
+        acknowledged.Should().Be(2);
+    }
+
+    [Fact]
     public async Task REQ_LEAD_008_A_lead_carrying_campaign_parameters_records_them_and_its_source()
     {
         var nonce = LeadArrange.Nonce();

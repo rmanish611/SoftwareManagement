@@ -44,6 +44,37 @@ public sealed class NotificationTests(LeadFixture fixture)
     }
 
     [Fact]
+    public async Task REQ_NOTIF_001_A_submission_that_was_refused_leaves_nothing_behind_in_the_queue()
+    {
+        var nonce = LeadArrange.Nonce();
+        using var client = _fixture.ClientFrom(LeadArrange.Address(nonce));
+
+        var before = await CountOutboxAsync();
+
+        var body = LeadArrange.ContactBody(nonce);
+        body.Consent = false;
+
+        var response = await client.PostAsJsonAsync("/api/v1/public/forms/contact/submit", body);
+        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+
+        using var scope = _fixture.NewScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        // The other half of BR-NOTIF-01. The first test proves a lead cannot exist without its
+        // messages; this one proves the messages cannot exist without a lead. An acknowledgement
+        // going out for an enquiry that was refused is a message to someone who never wrote in.
+        (await db.Leads.AnyAsync(l => l.FullName == $"PROBE-{nonce}")).Should().BeFalse();
+        (await CountOutboxAsync()).Should().Be(before);
+    }
+
+    private async Task<int> CountOutboxAsync()
+    {
+        using var scope = _fixture.NewScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        return await db.OutboxEmails.AsNoTracking().CountAsync();
+    }
+
+    [Fact]
     public async Task REQ_NOTIF_003_The_acknowledgement_carries_the_persons_name_and_their_reference()
     {
         var nonce = LeadArrange.Nonce();

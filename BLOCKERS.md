@@ -39,3 +39,22 @@ No test is available in ...SoftwareManagement.Api.IntegrationTests.dll.
 - Unblock action for Manish (ONE line): in Windows Security > App & browser control > Smart App Control, either turn it off or exclude `G:\software-management`, then the Release test host loads its own build like every other machine.
 - Work continued on: G5 database, G6 published-API smoke, G7 frontend build, render proof, frontend tests and lint, G8 anti-stub. None of them loads the test host.
 - retriedInPhase:   07
+
+### Update 2026-09-21 — P07 closed with this open
+
+Re-attempted after the rest of the gate: still blocked, same signature, on a Release build made
+that day. Attempt 6, and the last one this phase.
+
+The owner's instruction is to stop spending time on it: verify in Debug, skip publishing until a
+hosting target is chosen. So `run-tests.ps1` now takes `-Configuration`, `phase-smoke.ps1` takes
+`-FromSource`, and both print which mode they ran in, so a phase report cannot claim the stronger
+form by accident (ASM-16). The 196 backend tests ran in Debug, clean.
+
+What this costs, stated rather than absorbed: **D5 and D6 are not evidenced** for P07, and D3 and
+D15 are evidenced in Debug rather than Release. The coverage figure is not comparable with P06's
+for the same reason — Debug emits more sequence points — and the phase report says so instead of
+reading the difference as a regression.
+
+The blocker stays OPEN. It is not a defect in the code and it blocks no requirement; it blocks a
+form of evidence. One line from Manish clears it: Windows Security > App & browser control > Smart
+App Control, off or with `G:\software-management` excluded.

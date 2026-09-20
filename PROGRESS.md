@@ -258,3 +258,62 @@ components, and three further tests prove the harness reports real violations ra
 silently. The catalogue, the product page, the about page and the services page are all clean of
 serious and critical violations. See ASM-12, and ASM-11 for the Lighthouse row that is honestly
 recorded as not measured.
+
+## P07 - Lead capture - DONE (2026-09-21)
+
+The point of the whole site, finally connected: a stranger reads a product page, presses Send, and
+the enquiry arrives, acknowledged, consented and impossible to lose quietly. Behind the three forms
+sit a Turnstile token that is spendable once, a honeypot, a rate limiter that counts in the database
+rather than in memory, a consent record holding the exact sentence the person agreed to, and a
+transactional outbox that queues the acknowledgement and the owner alert inside the same transaction
+as the lead itself. 196 backend and 93 frontend tests pass, coverage 78.3%.
+
+The front end got its own pass at the same time. The home page was a heading and a paragraph, and
+the header linked to three of the five public routes, so the catalogue and both enquiry forms could
+only be reached by typing the address.
+
+### Two things this phase could not prove, and did not pretend to
+
+Smart App Control on this machine refuses the Release build of the API assembly outright - every
+path, every retry, confirmed against CodeIntegrity event entries rather than guessed at from the
+test runner. Six attempts are recorded in BLK-1. The same tests run clean in Debug, so the suite
+ran in Debug and says so in its own output.
+
+Publishing is off until the hosting target is chosen, so the runtime checks ran against `dotnet
+run`. **D5 and D6 are therefore not evidenced, and are not marked green.** Both scripts now take a
+switch for the weaker mode and print which one they were in, because the way this goes wrong is a
+report that quietly claims the stronger one.
+
+### The coverage number moved for two reasons, only one of which is work
+
+Measured in Debug under the old rules this phase came out at 72.6%, against P06's 76.5% in Release,
+while testing more. Debug emits far more sequence points, so the denominator grows and the same
+suite scores lower; the two figures are not comparable, and neither reading the drop as a regression
+nor the eventual rise as progress would have been honest.
+
+The rise to 78.3% is about a quarter new tests and three quarters a change of basis:
+`OpenApiXmlCommentSupport.generated.cs`, 762 lines the SDK emits and no test can reach, is now
+excluded the way generated migrations already were (ASM-15). The part that is genuinely work is
+`SoftwareManagement.Api` going from 68.1% to 82%.
+
+### Three real test gaps, found by looking rather than by the gate
+
+`LeadsController` was 44% covered with a single test, in a phase whose subject is capture - a lead
+written to a table nobody can read is not captured. `SmtpEmailSender` had no coverage at all, in a
+phase whose promise is that an enquiry is never silently lost. `ProductCategoriesController`, from
+P05, was at 22%, and one of its rules is the only way to take live products off the public site by
+accident.
+
+Counting tests per requirement found two more: REQ-LEAD-007 and REQ-NOTIF-001 each had one where the
+floor is two. Both now have a second test asserting the other side of the rule.
+
+Writing the category tests corrected me rather than the code. I assumed an editor could not archive;
+AZ-16 grants exactly that, and the test asserts the frozen matrix instead of my memory of it.
+
+### The smoke failed three times before it passed, and it was the smoke that was wrong
+
+Every submission it sent carried the same email and the same message. The duplicate check hashes the
+form key with the email, the phone and the message, so the six-submission flood was one enquiry
+repeated six times: each was answered with the original reference and none ever reached the rate
+limiter. The product was right and the probe was wrong. The bodies vary properly now and the reason
+is written into the script, so the next person does not lose the same twenty minutes to it.

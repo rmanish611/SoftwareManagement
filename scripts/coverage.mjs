@@ -41,12 +41,19 @@ for (const chunk of xml.split('<package ').slice(1)) {
 
   const body = chunk.split('</package>')[0];
 
-  // Skip generated migration files: verified by the D4 database gate, not by unit tests.
+  // Two exclusions, both generated code, both for the same reason: this figure is meant to say how
+  // thoroughly the code someone wrote is tested, and nobody wrote these.
+  //
+  //  - Migration files, verified by the D4 database gate against a real server (ASM-6).
+  //  - *.generated.cs, which here is the OpenAPI XML-comment support the SDK emits. It is 762
+  //    lines no test can reach, and counting it reported the size of a generated file as a gap in
+  //    the test suite (ASM-15).
   let covered = 0;
   let valid = 0;
   for (const cls of body.split('<class ').slice(1)) {
     const filename = (cls.match(/filename="([^"]*)"/) || [])[1] ?? '';
     if (/[\\/]Migrations[\\/]/.test(filename)) continue;
+    if (/\.generated\.cs$/i.test(filename)) continue;
 
     for (const line of cls.matchAll(/<line number="\d+" hits="(\d+)"/g)) {
       valid++;

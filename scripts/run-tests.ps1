@@ -27,7 +27,14 @@
 param(
     [string]$ResultsDirectory,
     [int]$MaxAttempts = 3,
-    [int]$RetryDelaySeconds = 20
+    [int]$RetryDelaySeconds = 20,
+
+    # Release is what the gate asks for and stays the default. Debug exists because of BLK-1:
+    # Smart App Control refuses this machine's Release build of the API assembly outright, at any
+    # path, and the same tests over the same source run clean in Debug. A run in Debug is recorded
+    # as a run in Debug - the configuration is printed below and belongs in the phase report.
+    [ValidateSet('Release', 'Debug')]
+    [string]$Configuration = 'Release'
 )
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
@@ -58,7 +65,7 @@ foreach ($project in $projects) {
     for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
         Write-Host "===== [TEST $($project.Name) attempt $attempt] ====="
 
-        $command = "dotnet test `"$($project.FullName)`" -c Release --no-build " +
+        $command = "dotnet test `"$($project.FullName)`" -c $Configuration --no-build " +
                    "--logger `"trx;LogFileName=$($project.Name).trx`" --results-directory `"$ResultsDirectory`""
 
         $output = & dotnet dotnet-coverage collect --output-format cobertura --output $projectCoverage $command 2>&1
@@ -96,6 +103,7 @@ if ($reports) {
     Write-Host "COVERAGE_REPORT=$coveragePath"
 }
 
+Write-Host "TEST_CONFIGURATION=$Configuration"
 Write-Host "SAC_RETRIES=$totalRetries"
 Select-String -Path $logPath -Pattern 'Passed!|Failed!' | ForEach-Object { $_.Line.Trim() }
 exit $overall

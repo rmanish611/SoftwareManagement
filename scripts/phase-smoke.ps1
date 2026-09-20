@@ -22,7 +22,15 @@ param(
     # an earlier run.
     [string]$Database = 'SoftwareManagementDb_Gate',
     [int]$Port = 5199,
-    [string]$EvidenceDirectory
+    [string]$EvidenceDirectory,
+
+    # Run the API from source instead of from _publish/api.
+    #
+    # The published artefact is what the gate normally wants, because the thing proved should be
+    # the thing that ships. Publishing is off for this project until the hosting target is chosen,
+    # so this exists to keep the checks runnable in the meantime. It changes what the run proves,
+    # and the run says which mode it was in so a phase report cannot claim the stronger one.
+    [switch]$FromSource
 )
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
@@ -214,9 +222,26 @@ $env:Outbox__PumpEnabled = 'false'
 $outLog = Join-Path $EvidenceDirectory 'api-out.log'
 $errLog = Join-Path $EvidenceDirectory 'api-err.log'
 
+if ($FromSource) {
+    Write-Output 'API_SOURCE=dotnet run (-c Debug) - NOT the published artefact'
+    $apiArguments = @(
+        'run',
+        '--project', (Join-Path $repoRoot 'backend\src\SoftwareManagement.Api\SoftwareManagement.Api.csproj'),
+        '--no-launch-profile',
+        '--no-build',
+        '-c', 'Debug'
+    )
+    $apiWorkingDirectory = $repoRoot
+}
+else {
+    Write-Output 'API_SOURCE=_publish/api/SoftwareManagement.Api.dll'
+    $apiArguments = @((Join-Path $repoRoot '_publish\api\SoftwareManagement.Api.dll'))
+    $apiWorkingDirectory = Join-Path $repoRoot '_publish\api'
+}
+
 $api = Start-Process -FilePath 'dotnet' `
-    -ArgumentList (Join-Path $repoRoot '_publish\api\SoftwareManagement.Api.dll') `
-    -WorkingDirectory (Join-Path $repoRoot '_publish\api') `
+    -ArgumentList $apiArguments `
+    -WorkingDirectory $apiWorkingDirectory `
     -RedirectStandardOutput $outLog -RedirectStandardError $errLog -PassThru -NoNewWindow
 
 try {
@@ -523,6 +548,14 @@ finally {
     if ($api -and -not $api.HasExited) {
         Stop-Process -Id $api.Id -Force -ErrorAction SilentlyContinue
         $api.WaitForExit(15000) | Out-Null
+    }
+
+    # Under -FromSource the process started above is `dotnet run`, which launches the application
+    # as a child. Killing the launcher leaves the child holding the port, and D9 would then report
+    # a leak that is really a half-finished shutdown.
+    if ($FromSource) {
+        Get-Process -Name 'SoftwareManagement.Api' -ErrorAction SilentlyContinue |
+            Stop-Process -Force -ErrorAction SilentlyContinue
     }
 
     Start-Sleep -Seconds 2

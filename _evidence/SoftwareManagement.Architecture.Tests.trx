@@ -1,56 +1,56 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TestRun id="55c1e293-570b-4d60-8132-1a266f98bd2b" name="jsrkm@JSRKMANISHKUMAR 2026-09-20 15:28:10" runUser="JSRKMANISHKUMAR\jsrkm" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
-  <Times creation="2026-09-20T15:28:10.4162244+05:30" queuing="2026-09-20T15:28:10.4162248+05:30" start="2026-09-20T15:28:05.6012717+05:30" finish="2026-09-20T15:28:10.4215004+05:30" />
-  <TestSettings name="default" id="e7290d7e-244c-4978-86c7-e6be9b2b38a8">
-    <Deployment runDeploymentRoot="jsrkm_JSRKMANISHKUMAR_2026-09-20_15_28_10" />
+<TestRun id="dc61276c-97cc-4ae3-b549-cf37f4523059" name="jsrkm@JSRKMANISHKUMAR 2026-09-20 15:30:26" runUser="JSRKMANISHKUMAR\jsrkm" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-20T15:30:26.2768234+05:30" queuing="2026-09-20T15:30:26.2768237+05:30" start="2026-09-20T15:30:25.1149229+05:30" finish="2026-09-20T15:30:26.2822800+05:30" />
+  <TestSettings name="default" id="e07a284d-9377-42c3-b785-6967b4f0501a">
+    <Deployment runDeploymentRoot="jsrkm_JSRKMANISHKUMAR_2026-09-20_15_30_26" />
   </TestSettings>
   <Results>
-    <UnitTestResult executionId="d2bbdb06-bff0-4b04-8aef-464adfd6f39d" testId="9656c69e-fece-3117-f721-8242f57b5b74" testName="SoftwareManagement.Architecture.Tests.LayeringTests.Domain_DoesNotReferenceAnyOtherProjectInTheSolution" computerName="JSRKMANISHKUMAR" duration="00:00:00.0025442" startTime="2026-09-20T15:28:10.3154952+05:30" endTime="2026-09-20T15:28:10.3156708+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d2bbdb06-bff0-4b04-8aef-464adfd6f39d" />
-    <UnitTestResult executionId="294fc8f4-43d1-40ff-89e4-6132178b9dc2" testId="7264c2e2-eb00-6cb4-29a7-44d95c304d10" testName="SoftwareManagement.Architecture.Tests.LayeringTests.Application_ReferencesDomain_SoDependenciesPointInward" computerName="JSRKMANISHKUMAR" duration="00:00:00.0006125" startTime="2026-09-20T15:28:10.3167092+05:30" endTime="2026-09-20T15:28:10.3168094+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="294fc8f4-43d1-40ff-89e4-6132178b9dc2" />
-    <UnitTestResult executionId="3b49e3e6-26f1-4d63-85a2-99aa9e83fafd" testId="a6e090f5-6bbe-b3ea-38f3-eb4c8e3f81d0" testName="SoftwareManagement.Architecture.Tests.LayeringTests.Application_DoesNotReferenceAspNetCoreMvc" computerName="JSRKMANISHKUMAR" duration="00:00:00.0006912" startTime="2026-09-20T15:28:10.3173072+05:30" endTime="2026-09-20T15:28:10.3173901+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3b49e3e6-26f1-4d63-85a2-99aa9e83fafd" />
-    <UnitTestResult executionId="e121c618-f610-4ac1-8e45-29afb1cd46f1" testId="46031641-a35a-bdfd-01a3-1a3ee6440020" testName="SoftwareManagement.Architecture.Tests.LayeringTests.Infrastructure_ReferencesApplication_AndNotTheApiLayer" computerName="JSRKMANISHKUMAR" duration="00:00:00.0109250" startTime="2026-09-20T15:28:10.3175904+05:30" endTime="2026-09-20T15:28:10.3176819+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e121c618-f610-4ac1-8e45-29afb1cd46f1" />
-    <UnitTestResult executionId="6dcac5c3-b714-41be-8533-d52981a3876d" testId="42a958a5-39fc-867d-2225-f99e278c252e" testName="SoftwareManagement.Architecture.Tests.LayeringTests.Domain_DoesNotReferenceEntityFrameworkCore" computerName="JSRKMANISHKUMAR" duration="00:00:00.0007251" startTime="2026-09-20T15:28:10.3178859+05:30" endTime="2026-09-20T15:28:10.3179690+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6dcac5c3-b714-41be-8533-d52981a3876d" />
-    <UnitTestResult executionId="6f7bcc17-82c9-4a03-93cb-95acf5c773dd" testId="037a6fcb-c2da-537e-dc0c-578202470c6b" testName="SoftwareManagement.Architecture.Tests.LayeringTests.Application_DoesNotReferenceInfrastructure" computerName="JSRKMANISHKUMAR" duration="00:00:00.0006779" startTime="2026-09-20T15:28:10.3170180+05:30" endTime="2026-09-20T15:28:10.3170966+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6f7bcc17-82c9-4a03-93cb-95acf5c773dd" />
-    <UnitTestResult executionId="c4241fc1-99da-480c-b027-23b1767c90a1" testId="c6abccdb-93ec-c03f-7ae8-c3c42358e41d" testName="SoftwareManagement.Architecture.Tests.LayeringTests.Api_IsTheOnlyProjectAllowedToDependOnInfrastructure" computerName="JSRKMANISHKUMAR" duration="00:00:00.2482788" startTime="2026-09-20T15:28:10.0737004+05:30" endTime="2026-09-20T15:28:10.3000528+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c4241fc1-99da-480c-b027-23b1767c90a1" />
+    <UnitTestResult executionId="df28af3f-0300-4216-8a20-1e7af427b42b" testId="46031641-a35a-bdfd-01a3-1a3ee6440020" testName="SoftwareManagement.Architecture.Tests.LayeringTests.Infrastructure_ReferencesApplication_AndNotTheApiLayer" computerName="JSRKMANISHKUMAR" duration="00:00:00.0004307" startTime="2026-09-20T15:30:26.1481420+05:30" endTime="2026-09-20T15:30:26.1481926+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="df28af3f-0300-4216-8a20-1e7af427b42b" />
+    <UnitTestResult executionId="6e115ded-0727-4c41-ab60-a06dc80d674e" testId="037a6fcb-c2da-537e-dc0c-578202470c6b" testName="SoftwareManagement.Architecture.Tests.LayeringTests.Application_DoesNotReferenceInfrastructure" computerName="JSRKMANISHKUMAR" duration="00:00:00.0005968" startTime="2026-09-20T15:30:26.1477119+05:30" endTime="2026-09-20T15:30:26.1477617+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6e115ded-0727-4c41-ab60-a06dc80d674e" />
+    <UnitTestResult executionId="2a4db460-9332-478e-9dc1-0c5cb788a600" testId="c6abccdb-93ec-c03f-7ae8-c3c42358e41d" testName="SoftwareManagement.Architecture.Tests.LayeringTests.Api_IsTheOnlyProjectAllowedToDependOnInfrastructure" computerName="JSRKMANISHKUMAR" duration="00:00:00.0537936" startTime="2026-09-20T15:30:26.0690630+05:30" endTime="2026-09-20T15:30:26.1319210+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2a4db460-9332-478e-9dc1-0c5cb788a600" />
+    <UnitTestResult executionId="82fd72be-8ff2-473c-b13b-b40c1ea7e806" testId="42a958a5-39fc-867d-2225-f99e278c252e" testName="SoftwareManagement.Architecture.Tests.LayeringTests.Domain_DoesNotReferenceEntityFrameworkCore" computerName="JSRKMANISHKUMAR" duration="00:00:00.0005485" startTime="2026-09-20T15:30:26.1483114+05:30" endTime="2026-09-20T15:30:26.1483699+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="82fd72be-8ff2-473c-b13b-b40c1ea7e806" />
+    <UnitTestResult executionId="d2b8f1e1-6440-40ff-92b6-2af3e0e8ae5a" testId="9656c69e-fece-3117-f721-8242f57b5b74" testName="SoftwareManagement.Architecture.Tests.LayeringTests.Domain_DoesNotReferenceAnyOtherProjectInTheSolution" computerName="JSRKMANISHKUMAR" duration="00:00:00.0025822" startTime="2026-09-20T15:30:26.1466941+05:30" endTime="2026-09-20T15:30:26.1467895+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d2b8f1e1-6440-40ff-92b6-2af3e0e8ae5a" />
+    <UnitTestResult executionId="73cd1428-b8ab-4b4f-8736-7f9663701ed7" testId="7264c2e2-eb00-6cb4-29a7-44d95c304d10" testName="SoftwareManagement.Architecture.Tests.LayeringTests.Application_ReferencesDomain_SoDependenciesPointInward" computerName="JSRKMANISHKUMAR" duration="00:00:00.0005702" startTime="2026-09-20T15:30:26.1475009+05:30" endTime="2026-09-20T15:30:26.1475661+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="73cd1428-b8ab-4b4f-8736-7f9663701ed7" />
+    <UnitTestResult executionId="d045bbec-9d5d-4ba0-bc93-000c57fdc763" testId="a6e090f5-6bbe-b3ea-38f3-eb4c8e3f81d0" testName="SoftwareManagement.Architecture.Tests.LayeringTests.Application_DoesNotReferenceAspNetCoreMvc" computerName="JSRKMANISHKUMAR" duration="00:00:00.0005783" startTime="2026-09-20T15:30:26.1479623+05:30" endTime="2026-09-20T15:30:26.1480126+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d045bbec-9d5d-4ba0-bc93-000c57fdc763" />
   </Results>
   <TestDefinitions>
     <UnitTest name="SoftwareManagement.Architecture.Tests.LayeringTests.Application_DoesNotReferenceInfrastructure" storage="g:\software-management\backend\tests\softwaremanagement.architecture.tests\bin\release\net10.0\softwaremanagement.architecture.tests.dll" id="037a6fcb-c2da-537e-dc0c-578202470c6b">
-      <Execution id="6f7bcc17-82c9-4a03-93cb-95acf5c773dd" />
+      <Execution id="6e115ded-0727-4c41-ab60-a06dc80d674e" />
       <TestMethod codeBase="G:\software-management\backend\tests\SoftwareManagement.Architecture.Tests\bin\Release\net10.0\SoftwareManagement.Architecture.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="SoftwareManagement.Architecture.Tests.LayeringTests" name="Application_DoesNotReferenceInfrastructure" />
     </UnitTest>
     <UnitTest name="SoftwareManagement.Architecture.Tests.LayeringTests.Api_IsTheOnlyProjectAllowedToDependOnInfrastructure" storage="g:\software-management\backend\tests\softwaremanagement.architecture.tests\bin\release\net10.0\softwaremanagement.architecture.tests.dll" id="c6abccdb-93ec-c03f-7ae8-c3c42358e41d">
-      <Execution id="c4241fc1-99da-480c-b027-23b1767c90a1" />
+      <Execution id="2a4db460-9332-478e-9dc1-0c5cb788a600" />
       <TestMethod codeBase="G:\software-management\backend\tests\SoftwareManagement.Architecture.Tests\bin\Release\net10.0\SoftwareManagement.Architecture.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="SoftwareManagement.Architecture.Tests.LayeringTests" name="Api_IsTheOnlyProjectAllowedToDependOnInfrastructure" />
     </UnitTest>
     <UnitTest name="SoftwareManagement.Architecture.Tests.LayeringTests.Domain_DoesNotReferenceAnyOtherProjectInTheSolution" storage="g:\software-management\backend\tests\softwaremanagement.architecture.tests\bin\release\net10.0\softwaremanagement.architecture.tests.dll" id="9656c69e-fece-3117-f721-8242f57b5b74">
-      <Execution id="d2bbdb06-bff0-4b04-8aef-464adfd6f39d" />
+      <Execution id="d2b8f1e1-6440-40ff-92b6-2af3e0e8ae5a" />
       <TestMethod codeBase="G:\software-management\backend\tests\SoftwareManagement.Architecture.Tests\bin\Release\net10.0\SoftwareManagement.Architecture.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="SoftwareManagement.Architecture.Tests.LayeringTests" name="Domain_DoesNotReferenceAnyOtherProjectInTheSolution" />
     </UnitTest>
     <UnitTest name="SoftwareManagement.Architecture.Tests.LayeringTests.Infrastructure_ReferencesApplication_AndNotTheApiLayer" storage="g:\software-management\backend\tests\softwaremanagement.architecture.tests\bin\release\net10.0\softwaremanagement.architecture.tests.dll" id="46031641-a35a-bdfd-01a3-1a3ee6440020">
-      <Execution id="e121c618-f610-4ac1-8e45-29afb1cd46f1" />
+      <Execution id="df28af3f-0300-4216-8a20-1e7af427b42b" />
       <TestMethod codeBase="G:\software-management\backend\tests\SoftwareManagement.Architecture.Tests\bin\Release\net10.0\SoftwareManagement.Architecture.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="SoftwareManagement.Architecture.Tests.LayeringTests" name="Infrastructure_ReferencesApplication_AndNotTheApiLayer" />
     </UnitTest>
     <UnitTest name="SoftwareManagement.Architecture.Tests.LayeringTests.Domain_DoesNotReferenceEntityFrameworkCore" storage="g:\software-management\backend\tests\softwaremanagement.architecture.tests\bin\release\net10.0\softwaremanagement.architecture.tests.dll" id="42a958a5-39fc-867d-2225-f99e278c252e">
-      <Execution id="6dcac5c3-b714-41be-8533-d52981a3876d" />
+      <Execution id="82fd72be-8ff2-473c-b13b-b40c1ea7e806" />
       <TestMethod codeBase="G:\software-management\backend\tests\SoftwareManagement.Architecture.Tests\bin\Release\net10.0\SoftwareManagement.Architecture.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="SoftwareManagement.Architecture.Tests.LayeringTests" name="Domain_DoesNotReferenceEntityFrameworkCore" />
     </UnitTest>
     <UnitTest name="SoftwareManagement.Architecture.Tests.LayeringTests.Application_ReferencesDomain_SoDependenciesPointInward" storage="g:\software-management\backend\tests\softwaremanagement.architecture.tests\bin\release\net10.0\softwaremanagement.architecture.tests.dll" id="7264c2e2-eb00-6cb4-29a7-44d95c304d10">
-      <Execution id="294fc8f4-43d1-40ff-89e4-6132178b9dc2" />
+      <Execution id="73cd1428-b8ab-4b4f-8736-7f9663701ed7" />
       <TestMethod codeBase="G:\software-management\backend\tests\SoftwareManagement.Architecture.Tests\bin\Release\net10.0\SoftwareManagement.Architecture.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="SoftwareManagement.Architecture.Tests.LayeringTests" name="Application_ReferencesDomain_SoDependenciesPointInward" />
     </UnitTest>
     <UnitTest name="SoftwareManagement.Architecture.Tests.LayeringTests.Application_DoesNotReferenceAspNetCoreMvc" storage="g:\software-management\backend\tests\softwaremanagement.architecture.tests\bin\release\net10.0\softwaremanagement.architecture.tests.dll" id="a6e090f5-6bbe-b3ea-38f3-eb4c8e3f81d0">
-      <Execution id="3b49e3e6-26f1-4d63-85a2-99aa9e83fafd" />
+      <Execution id="d045bbec-9d5d-4ba0-bc93-000c57fdc763" />
       <TestMethod codeBase="G:\software-management\backend\tests\SoftwareManagement.Architecture.Tests\bin\Release\net10.0\SoftwareManagement.Architecture.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="SoftwareManagement.Architecture.Tests.LayeringTests" name="Application_DoesNotReferenceAspNetCoreMvc" />
     </UnitTest>
   </TestDefinitions>
   <TestEntries>
-    <TestEntry testId="9656c69e-fece-3117-f721-8242f57b5b74" executionId="d2bbdb06-bff0-4b04-8aef-464adfd6f39d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="7264c2e2-eb00-6cb4-29a7-44d95c304d10" executionId="294fc8f4-43d1-40ff-89e4-6132178b9dc2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="a6e090f5-6bbe-b3ea-38f3-eb4c8e3f81d0" executionId="3b49e3e6-26f1-4d63-85a2-99aa9e83fafd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="46031641-a35a-bdfd-01a3-1a3ee6440020" executionId="e121c618-f610-4ac1-8e45-29afb1cd46f1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="42a958a5-39fc-867d-2225-f99e278c252e" executionId="6dcac5c3-b714-41be-8533-d52981a3876d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="037a6fcb-c2da-537e-dc0c-578202470c6b" executionId="6f7bcc17-82c9-4a03-93cb-95acf5c773dd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="c6abccdb-93ec-c03f-7ae8-c3c42358e41d" executionId="c4241fc1-99da-480c-b027-23b1767c90a1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="46031641-a35a-bdfd-01a3-1a3ee6440020" executionId="df28af3f-0300-4216-8a20-1e7af427b42b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="037a6fcb-c2da-537e-dc0c-578202470c6b" executionId="6e115ded-0727-4c41-ab60-a06dc80d674e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c6abccdb-93ec-c03f-7ae8-c3c42358e41d" executionId="2a4db460-9332-478e-9dc1-0c5cb788a600" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="42a958a5-39fc-867d-2225-f99e278c252e" executionId="82fd72be-8ff2-473c-b13b-b40c1ea7e806" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9656c69e-fece-3117-f721-8242f57b5b74" executionId="d2b8f1e1-6440-40ff-92b6-2af3e0e8ae5a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7264c2e2-eb00-6cb4-29a7-44d95c304d10" executionId="73cd1428-b8ab-4b4f-8736-7f9663701ed7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a6e090f5-6bbe-b3ea-38f3-eb4c8e3f81d0" executionId="d045bbec-9d5d-4ba0-bc93-000c57fdc763" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
   </TestEntries>
   <TestLists>
     <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
@@ -60,10 +60,10 @@
     <Counters total="7" executed="7" passed="7" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
     <Output>
       <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.4+50e68bbb8b (64-bit .NET 10.0.11)&#xD;
-[xUnit.net 00:00:02.16]   Discovering: SoftwareManagement.Architecture.Tests&#xD;
-[xUnit.net 00:00:02.23]   Discovered:  SoftwareManagement.Architecture.Tests&#xD;
-[xUnit.net 00:00:02.26]   Starting:    SoftwareManagement.Architecture.Tests&#xD;
-[xUnit.net 00:00:02.57]   Finished:    SoftwareManagement.Architecture.Tests&#xD;
+[xUnit.net 00:00:00.19]   Discovering: SoftwareManagement.Architecture.Tests&#xD;
+[xUnit.net 00:00:00.24]   Discovered:  SoftwareManagement.Architecture.Tests&#xD;
+[xUnit.net 00:00:00.27]   Starting:    SoftwareManagement.Architecture.Tests&#xD;
+[xUnit.net 00:00:00.38]   Finished:    SoftwareManagement.Architecture.Tests&#xD;
 </StdOut>
     </Output>
   </ResultSummary>

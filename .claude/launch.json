@@ -1,0 +1,25 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-Command",
+        "$env:ASPNETCORE_ENVIRONMENT='Development'; dotnet run --project G:/software-management/backend/src/SoftwareManagement.Api/SoftwareManagement.Api.csproj --no-launch-profile --urls http://localhost:5199"
+      ],
+      "port": 5199
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-Command",
+        "Set-Location 'G:/software-management'; $env:PATH='G:/software-management/tools/node/node-v24.20.0-win-x64;'+$env:PATH; $env:API_BASE_URL='http://localhost:5199'; $env:PORT='4300'; node frontend/dist/software-management/server/server.mjs"
+      ],
+      "port": 4300
+    }
+  ]
+}

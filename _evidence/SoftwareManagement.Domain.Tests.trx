@@ -1,38 +1,38 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TestRun id="1582fe54-a526-4edf-859f-4d60cac78cc2" name="jsrkm@JSRKMANISHKUMAR 2026-09-20 15:28:17" runUser="JSRKMANISHKUMAR\jsrkm" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
-  <Times creation="2026-09-20T15:28:17.5512213+05:30" queuing="2026-09-20T15:28:17.5512216+05:30" start="2026-09-20T15:28:12.5119081+05:30" finish="2026-09-20T15:28:17.5586122+05:30" />
-  <TestSettings name="default" id="5e2be85a-aa2a-47fb-9023-f412ccc7892e">
-    <Deployment runDeploymentRoot="jsrkm_JSRKMANISHKUMAR_2026-09-20_15_28_17" />
+<TestRun id="182ada54-986f-4088-8c9f-182b975a67f3" name="jsrkm@JSRKMANISHKUMAR 2026-09-20 15:30:29" runUser="JSRKMANISHKUMAR\jsrkm" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-20T15:30:29.1991203+05:30" queuing="2026-09-20T15:30:29.1991207+05:30" start="2026-09-20T15:30:28.0643661+05:30" finish="2026-09-20T15:30:29.2045324+05:30" />
+  <TestSettings name="default" id="394bde56-56fe-42f1-9dff-0ed13c820cf6">
+    <Deployment runDeploymentRoot="jsrkm_JSRKMANISHKUMAR_2026-09-20_15_30_29" />
   </TestSettings>
   <Results>
-    <UnitTestResult executionId="74eb98ff-63e0-44eb-8eec-84ae97fb2031" testId="0705d2c6-252b-ca0c-b9b2-95fdc017adc0" testName="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests.IsTransient_ReturnsTrue_WhenIdIsEmpty" computerName="JSRKMANISHKUMAR" duration="00:00:00.0008067" startTime="2026-09-20T15:28:17.4656843+05:30" endTime="2026-09-20T15:28:17.4657459+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="74eb98ff-63e0-44eb-8eec-84ae97fb2031" />
-    <UnitTestResult executionId="0712318c-c955-4ac2-8830-06d625061dbb" testId="33811d45-0734-f7f1-cea0-2dddabe12026" testName="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests.RowVersion_IsNeverNull_SoConcurrencyChecksCannotThrow" computerName="JSRKMANISHKUMAR" duration="00:00:00.0041285" startTime="2026-09-20T15:28:17.4648400+05:30" endTime="2026-09-20T15:28:17.4649294+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0712318c-c955-4ac2-8830-06d625061dbb" />
-    <UnitTestResult executionId="d75500a7-964b-4f42-b267-d3fec6f5be3f" testId="4203bcb5-533a-c8ae-5eca-60450b6a089e" testName="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests.IsTransient_ReturnsFalse_WhenIdIsAssigned" computerName="JSRKMANISHKUMAR" duration="00:00:00.0005657" startTime="2026-09-20T15:28:17.4658858+05:30" endTime="2026-09-20T15:28:17.4659451+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d75500a7-964b-4f42-b267-d3fec6f5be3f" />
-    <UnitTestResult executionId="0385b57f-a688-4334-a71f-c2e30cfadd8f" testId="f3ea42a8-f813-a8e9-351a-a681e03e1486" testName="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests.NewEntity_HasNoModificationStamp" computerName="JSRKMANISHKUMAR" duration="00:00:00.0936155" startTime="2026-09-20T15:28:17.3770703+05:30" endTime="2026-09-20T15:28:17.4501659+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0385b57f-a688-4334-a71f-c2e30cfadd8f" />
+    <UnitTestResult executionId="6defdfc5-4f5a-4bf7-9b34-4ed10527b8f4" testId="0705d2c6-252b-ca0c-b9b2-95fdc017adc0" testName="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests.IsTransient_ReturnsTrue_WhenIdIsEmpty" computerName="JSRKMANISHKUMAR" duration="00:00:00.0009575" startTime="2026-09-20T15:30:29.0518356+05:30" endTime="2026-09-20T15:30:29.0520057+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6defdfc5-4f5a-4bf7-9b34-4ed10527b8f4" />
+    <UnitTestResult executionId="c6730c9a-14dc-4684-8581-b1fac5efa250" testId="4203bcb5-533a-c8ae-5eca-60450b6a089e" testName="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests.IsTransient_ReturnsFalse_WhenIdIsAssigned" computerName="JSRKMANISHKUMAR" duration="00:00:00.0004483" startTime="2026-09-20T15:30:29.0522546+05:30" endTime="2026-09-20T15:30:29.0523824+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c6730c9a-14dc-4684-8581-b1fac5efa250" />
+    <UnitTestResult executionId="2911aa30-6d9b-4d76-ba6d-a597a1eea8bb" testId="33811d45-0734-f7f1-cea0-2dddabe12026" testName="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests.RowVersion_IsNeverNull_SoConcurrencyChecksCannotThrow" computerName="JSRKMANISHKUMAR" duration="00:00:00.0048635" startTime="2026-09-20T15:30:29.0499331+05:30" endTime="2026-09-20T15:30:29.0502665+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2911aa30-6d9b-4d76-ba6d-a597a1eea8bb" />
+    <UnitTestResult executionId="1c181466-fade-4bd2-b44b-4b671d9abb1e" testId="f3ea42a8-f813-a8e9-351a-a681e03e1486" testName="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests.NewEntity_HasNoModificationStamp" computerName="JSRKMANISHKUMAR" duration="00:00:00.0201481" startTime="2026-09-20T15:30:29.0039698+05:30" endTime="2026-09-20T15:30:29.0337904+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1c181466-fade-4bd2-b44b-4b671d9abb1e" />
   </Results>
   <TestDefinitions>
     <UnitTest name="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests.NewEntity_HasNoModificationStamp" storage="g:\software-management\backend\tests\softwaremanagement.domain.tests\bin\release\net10.0\softwaremanagement.domain.tests.dll" id="f3ea42a8-f813-a8e9-351a-a681e03e1486">
-      <Execution id="0385b57f-a688-4334-a71f-c2e30cfadd8f" />
+      <Execution id="1c181466-fade-4bd2-b44b-4b671d9abb1e" />
       <TestMethod codeBase="G:\software-management\backend\tests\SoftwareManagement.Domain.Tests\bin\Release\net10.0\SoftwareManagement.Domain.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests" name="NewEntity_HasNoModificationStamp" />
     </UnitTest>
     <UnitTest name="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests.IsTransient_ReturnsTrue_WhenIdIsEmpty" storage="g:\software-management\backend\tests\softwaremanagement.domain.tests\bin\release\net10.0\softwaremanagement.domain.tests.dll" id="0705d2c6-252b-ca0c-b9b2-95fdc017adc0">
-      <Execution id="74eb98ff-63e0-44eb-8eec-84ae97fb2031" />
+      <Execution id="6defdfc5-4f5a-4bf7-9b34-4ed10527b8f4" />
       <TestMethod codeBase="G:\software-management\backend\tests\SoftwareManagement.Domain.Tests\bin\Release\net10.0\SoftwareManagement.Domain.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests" name="IsTransient_ReturnsTrue_WhenIdIsEmpty" />
     </UnitTest>
     <UnitTest name="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests.IsTransient_ReturnsFalse_WhenIdIsAssigned" storage="g:\software-management\backend\tests\softwaremanagement.domain.tests\bin\release\net10.0\softwaremanagement.domain.tests.dll" id="4203bcb5-533a-c8ae-5eca-60450b6a089e">
-      <Execution id="d75500a7-964b-4f42-b267-d3fec6f5be3f" />
+      <Execution id="c6730c9a-14dc-4684-8581-b1fac5efa250" />
       <TestMethod codeBase="G:\software-management\backend\tests\SoftwareManagement.Domain.Tests\bin\Release\net10.0\SoftwareManagement.Domain.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests" name="IsTransient_ReturnsFalse_WhenIdIsAssigned" />
     </UnitTest>
     <UnitTest name="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests.RowVersion_IsNeverNull_SoConcurrencyChecksCannotThrow" storage="g:\software-management\backend\tests\softwaremanagement.domain.tests\bin\release\net10.0\softwaremanagement.domain.tests.dll" id="33811d45-0734-f7f1-cea0-2dddabe12026">
-      <Execution id="0712318c-c955-4ac2-8830-06d625061dbb" />
+      <Execution id="2911aa30-6d9b-4d76-ba6d-a597a1eea8bb" />
       <TestMethod codeBase="G:\software-management\backend\tests\SoftwareManagement.Domain.Tests\bin\Release\net10.0\SoftwareManagement.Domain.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="SoftwareManagement.Domain.Tests.Common.AuditableEntityTests" name="RowVersion_IsNeverNull_SoConcurrencyChecksCannotThrow" />
     </UnitTest>
   </TestDefinitions>
   <TestEntries>
-    <TestEntry testId="0705d2c6-252b-ca0c-b9b2-95fdc017adc0" executionId="74eb98ff-63e0-44eb-8eec-84ae97fb2031" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="33811d45-0734-f7f1-cea0-2dddabe12026" executionId="0712318c-c955-4ac2-8830-06d625061dbb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="4203bcb5-533a-c8ae-5eca-60450b6a089e" executionId="d75500a7-964b-4f42-b267-d3fec6f5be3f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
-    <TestEntry testId="f3ea42a8-f813-a8e9-351a-a681e03e1486" executionId="0385b57f-a688-4334-a71f-c2e30cfadd8f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0705d2c6-252b-ca0c-b9b2-95fdc017adc0" executionId="6defdfc5-4f5a-4bf7-9b34-4ed10527b8f4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4203bcb5-533a-c8ae-5eca-60450b6a089e" executionId="c6730c9a-14dc-4684-8581-b1fac5efa250" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="33811d45-0734-f7f1-cea0-2dddabe12026" executionId="2911aa30-6d9b-4d76-ba6d-a597a1eea8bb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f3ea42a8-f813-a8e9-351a-a681e03e1486" executionId="1c181466-fade-4bd2-b44b-4b671d9abb1e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
   </TestEntries>
   <TestLists>
     <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
@@ -42,10 +42,10 @@
     <Counters total="4" executed="4" passed="4" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
     <Output>
       <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.4+50e68bbb8b (64-bit .NET 10.0.11)&#xD;
-[xUnit.net 00:00:01.34]   Discovering: SoftwareManagement.Domain.Tests&#xD;
-[xUnit.net 00:00:01.40]   Discovered:  SoftwareManagement.Domain.Tests&#xD;
-[xUnit.net 00:00:01.43]   Starting:    SoftwareManagement.Domain.Tests&#xD;
-[xUnit.net 00:00:01.58]   Finished:    SoftwareManagement.Domain.Tests&#xD;
+[xUnit.net 00:00:00.18]   Discovering: SoftwareManagement.Domain.Tests&#xD;
+[xUnit.net 00:00:00.24]   Discovered:  SoftwareManagement.Domain.Tests&#xD;
+[xUnit.net 00:00:00.27]   Starting:    SoftwareManagement.Domain.Tests&#xD;
+[xUnit.net 00:00:00.36]   Finished:    SoftwareManagement.Domain.Tests&#xD;
 </StdOut>
     </Output>
   </ResultSummary>

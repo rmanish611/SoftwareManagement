@@ -132,4 +132,26 @@ public static class LeadArrange
     public sealed record ProductChoiceRow(string Slug, string Name);
 
     public sealed record LeadRow(Guid Id, string FullName, string? Email, string Stage, string Source);
+
+    public sealed record ConsentRow(string Text, int Version, string Purpose, DateTime GivenAtUtc);
+
+    /// <summary>
+    /// One enquiry as the admin side reads it back. Declared in full rather than as a subset,
+    /// because a field the API stops sending would then deserialise as null and the test would
+    /// still pass: naming every field is what makes the shape itself part of the assertion.
+    /// </summary>
+    public sealed record LeadDetailRow(
+        Guid Id,
+        string FullName,
+        string? Email,
+        string? Phone,
+        string? CompanyName,
+        string? Message,
+        string Stage,
+        string Source,
+        string? UtmJson,
+        string? Product,
+        DateTime CreatedAtUtc,
+        DateTime SlaDueAtUtc,
+        ConsentRow? Consent);
 }

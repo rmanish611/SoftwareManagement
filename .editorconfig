@@ -64,10 +64,14 @@ dotnet_diagnostic.CS8625.severity = none
 dotnet_diagnostic.CA1861.severity = none
 dotnet_diagnostic.IDE0055.severity = none
 
-[backend/src/**.cs]
-# CA1711 reserves the suffix "Permission" for other purposes. Here `Permission` and
-# `RolePermission` are the names the approved data model and authorization matrix use
-# (03-data-model.md E-43/E-44, 06-authz.md), and the seeded table is called Permissions.
-# Renaming the type to satisfy a naming heuristic would make the code disagree with the
-# document it implements, so the suffix is allowed instead. No correctness rule is affected.
+[backend/src/SoftwareManagement.Domain/Identity/Permission.cs]
+# CA1711 reserves the suffix "Permission" for other purposes. Exactly two types carry it, both
+# declared in this file: `Permission` and `RolePermission`. They are the names the approved data
+# model and authorization matrix use (03-data-model.md E-43/E-44, 06-authz.md), and the seeded
+# table is called Permissions. Renaming them to satisfy a naming heuristic would make the code
+# disagree with the document it implements, so the suffix is allowed instead.
+#
+# Scoped to this one file rather than to backend/src, so a reserved suffix appearing anywhere else
+# still fails the build. See EXC-02 and ADR-R06: the wider scope was set in P03 with no record, and
+# the guardrail hash that should have caught it had been stale since the same phase.
 dotnet_code_quality.CA1711.allowed_suffixes = Permission

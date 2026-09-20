@@ -11,6 +11,7 @@ Patterns that are never exceptable, whatever the justification: `NotImplementedE
 | EXC-ID | File:line | Pattern | Why no alternative exists | Phase | Permanent or remove by |
 |---|---|---|---|---|---|
 | EXC-01 | `backend/src/SoftwareManagement.Infrastructure/Persistence/Migrations/20260907235012_InitialCreate.Designer.cs:20` and `.../AppDbContextModelSnapshot.cs:17` | `#pragma warning disable 612, 618` | Emitted by EF Core itself in generated migration output. An applied migration is frozen: a mistake is corrected by a new migration, never by hand-editing the old one, so the line cannot be removed without editing generated code that the tool will rewrite anyway. The protocol's own carve-out for generated migrations covers exactly this case. | P02 | Permanent while EF Core emits it |
+| EXC-02 | `.editorconfig:67` scoped to `backend/src/SoftwareManagement.Domain/Identity/Permission.cs` | `dotnet_code_quality.CA1711.allowed_suffixes = Permission` | CA1711 reserves the suffix `Permission`. The two types that carry it are the names the approved data model (E-43, E-44) and the authorization matrix use, and the seeded table is `Permissions`; renaming them would make the code disagree with the document it implements. Scoped to the single file that declares them, so the analyser still fails the build for a reserved suffix anywhere else. | P03, narrowed and recorded in P07 (ADR-R06) | Permanent while those names stand |
 
 ## Secret-scan pathspec exclusions
 
@@ -22,7 +23,7 @@ relaxed, because a weaker pattern would stop finding real secrets everywhere els
 |---|---|---|---|
 | `backend/src/SoftwareManagement.Domain/Identity/LoginAttempt.cs` | 31 | `public const string WrongPassword = "wrong_password";` | It is the audit-log reason code recorded against a failed sign-in. The value is written to the `LoginAttempts` table and never returned to a caller; it grants nothing. |
 
-Count in force: 1 of 5.
+Count in force: 2 of 5.
 
 **How the scan treats this.** The detector is not edited and the pattern list is not shortened.
 The backend scan excludes `**/Persistence/Migrations/**` because those files are generated and

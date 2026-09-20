@@ -142,16 +142,52 @@ function Get-Status {
             $args.ContentType = 'application/json'
         }
         $response = Invoke-WebRequest @args
-        return [pscustomobject]@{ Status = [int]$response.StatusCode; Content = $response.Content }
+        return [pscustomobject]@{
+            Status     = [int]$response.StatusCode
+            Content    = $response.Content
+            RetryAfter = $response.Headers['Retry-After']
+        }
     }
     catch [System.Net.WebException] {
         $r = $_.Exception.Response
-        if ($null -eq $r) { return [pscustomobject]@{ Status = 0; Content = $_.Exception.Message } }
+        if ($null -eq $r) { return [pscustomobject]@{ Status = 0; Content = $_.Exception.Message; RetryAfter = '' } }
         $reader = New-Object System.IO.StreamReader($r.GetResponseStream())
-        return [pscustomobject]@{ Status = [int]$r.StatusCode; Content = $reader.ReadToEnd() }
+        # Read the header off the response itself: a refusal is where Retry-After actually lives,
+        # and Invoke-WebRequest throws before it hands back an object to read it from.
+        return [pscustomobject]@{
+            Status     = [int]$r.StatusCode
+            Content    = $reader.ReadToEnd()
+            RetryAfter = $r.Headers['Retry-After']
+        }
     }
     catch {
-        return [pscustomobject]@{ Status = 0; Content = $_.Exception.Message }
+        return [pscustomobject]@{ Status = 0; Content = $_.Exception.Message; RetryAfter = '' }
+    }
+}
+
+function Invoke-SqlScalar {
+    <#
+        One value straight out of the gate database.
+
+        The checks this serves are about counting rows, and a count taken through the API would be
+        the API marking its own homework: the point of asking SQL Server is that it answers from
+        what was actually written.
+    #>
+    param([Parameter(Mandatory = $true)][string]$Query)
+
+    $connectionString = "Server=.\SQLEXPRESS;Database=$Database;Trusted_Connection=True;TrustServerCertificate=True"
+    $connection = New-Object System.Data.SqlClient.SqlConnection $connectionString
+    $connection.Open()
+    try {
+        $command = $connection.CreateCommand()
+        $command.CommandText = $Query
+        $command.CommandTimeout = 60
+        $value = $command.ExecuteScalar()
+        if ($null -eq $value -or $value -is [System.DBNull]) { return $null }
+        return $value
+    }
+    finally {
+        $connection.Close()
     }
 }
 
@@ -164,6 +200,16 @@ $env:Jwt__Audience = 'software-management-gate'
 $env:Database__MigrateOnStartup = 'true'
 $env:Seed__OwnerEmail = $ownerEmail
 $env:Seed__OwnerPassword = $ownerPassword
+
+# The forms are posted by this script, not by a browser, so there is no Turnstile widget to issue a
+# token. The bypass is a prefix and is only ever honoured because this line sets it: a deployment
+# that has not set it has no bypass at all, which is the property the verifier is built around.
+# Each submission still needs its own token, because a token is spendable once bypass or not, and
+# the replay check below depends on that being true.
+$env:Captcha__BypassToken = "gate-bypass-$Nonce"
+
+# The outbox pump would otherwise send on a timer while the assertions about the queue are running.
+$env:Outbox__PumpEnabled = 'false'
 
 $outLog = Join-Path $EvidenceDirectory 'api-out.log'
 $errLog = Join-Path $EvidenceDirectory 'api-err.log'
@@ -188,7 +234,8 @@ try {
         '/api/v1/admin/products',
         '/api/v1/admin/product-categories',
         '/api/v1/admin/pages',
-        '/api/v1/admin/media'
+        '/api/v1/admin/media',
+        '/api/v1/leads'
     )
 
     $checked = 0
@@ -202,7 +249,7 @@ try {
     Write-Output "ANON_ROUTES_CHECKED=$checked"
 
     # The public catalogue is on the allowlist and must answer without a token.
-    foreach ($path in @('/api/v1/public/catalog/categories', '/api/v1/public/catalog/products')) {
+    foreach ($path in @('/api/v1/public/catalog/categories', '/api/v1/public/catalog/products', '/api/v1/public/forms/contact')) {
         $status = (Get-Status $path).Status
         Write-Output "ANON_PUBLIC $path => $status"
         if ($status -ne 200) { $failures.Add("$path answered $status anonymously, expected 200") }
@@ -346,6 +393,130 @@ try {
 
         $env:GATE_PRODUCT_ID = $productId
         $env:GATE_PROBE_NAME = $probeName
+
+        # ------------------------------------------------------------------------------------
+        # P07 lead capture. Every check below is one row of the phase's exit-criteria table, run
+        # against the published API rather than asserted in a test, because a rule about counting
+        # submissions over a window only means something against a real database and a real clock.
+        # ------------------------------------------------------------------------------------
+        $leadProbe = "PROBE-$Nonce"
+        $leadEmail = "probe-$Nonce@example.test"
+        $captcha = "gate-bypass-$Nonce"
+        $leadIp = '198.51.100.7'
+
+        function Send-Enquiry {
+            param([string]$Key = 'contact', [hashtable]$Body, [string]$Ip = $leadIp)
+            $headers = @{ 'X-Forwarded-For' = $Ip }
+            return Get-Status "/api/v1/public/forms/$Key/submit" -Method 'POST' -Headers $headers -Body $Body
+        }
+
+        # 1 — an accepted enquiry writes a submission, a consent record and a lead (REQ-LEAD-001).
+        $enquiry = Send-Enquiry -Body @{
+            answers      = @{ fullName = $leadProbe; email = $leadEmail; message = "A gate enquiry, reference $Nonce." }
+            consent      = $true
+            captchaToken = "$captcha-1"
+        }
+
+        Write-Output "LEAD_SUBMIT_STATUS=$($enquiry.Status)"
+        Write-Output "LEAD_SUBMIT_BODY=$($enquiry.Content)"
+        if ($enquiry.Status -ne 202) { $failures.Add("the contact form returned $($enquiry.Status), expected 202") }
+        if ($enquiry.Content -notlike '*ENQ-*') { $failures.Add('the acknowledgement carried no enquiry reference') }
+
+        # 2 — the same captcha token a second time is refused (REQ-LEAD-004, BR-LEAD-02).
+        $replay = Send-Enquiry -Body @{
+            answers      = @{ fullName = "Replay $Nonce"; email = "replay-$Nonce@example.test"; message = 'A replayed token.' }
+            consent      = $true
+            captchaToken = "$captcha-1"
+        }
+
+        Write-Output "LEAD_REPLAY_STATUS=$($replay.Status)"
+        if ($replay.Status -ne 400) { $failures.Add("a replayed captcha token returned $($replay.Status), expected 400") }
+        if ($replay.Content -notlike '*captcha*') { $failures.Add('the replay refusal did not name the captcha') }
+
+        # 3 — consent is not optional (REQ-LEAD-006, BR-LEAD-06).
+        $noConsent = Send-Enquiry -Ip '198.51.100.8' -Body @{
+            answers      = @{ fullName = "No consent $Nonce"; email = "nc-$Nonce@example.test"; message = 'Sent without consent.' }
+            consent      = $false
+            captchaToken = "$captcha-nc"
+        }
+
+        Write-Output "LEAD_NO_CONSENT_STATUS=$($noConsent.Status)"
+        Write-Output "LEAD_NO_CONSENT_BODY=$($noConsent.Content)"
+        if ($noConsent.Status -ne 422) { $failures.Add("a submission without consent returned $($noConsent.Status), expected 422") }
+        if ($noConsent.Content -notlike '*CONSENT_REQUIRED*') { $failures.Add('the consent refusal did not carry code CONSENT_REQUIRED') }
+
+        # 4 — the same enquiry twice inside ten minutes is one lead (REQ-LEAD-007).
+        $duplicateBody = @{
+            answers = @{ fullName = "Twice $Nonce"; email = "twice-$Nonce@example.test"; message = 'Sent twice by an impatient hand.' }
+            consent = $true
+        }
+
+        $first = Send-Enquiry -Ip '198.51.100.9' -Body ($duplicateBody + @{ captchaToken = "$captcha-d1" })
+        $again = Send-Enquiry -Ip '198.51.100.9' -Body ($duplicateBody + @{ captchaToken = "$captcha-d2" })
+        Write-Output "LEAD_DUPLICATE_FIRST=$($first.Status) SECOND=$($again.Status)"
+        $twiceRows = Invoke-SqlScalar -Query "SELECT COUNT(*) FROM dbo.Leads WHERE FullName = 'Twice $Nonce';"
+        Write-Output "LEAD_DUPLICATE_ROWS=$twiceRows"
+        if ($twiceRows -ne 1) { $failures.Add("the same enquiry sent twice produced $twiceRows leads, expected 1") }
+
+        # 5 — the sixth submission from one address inside ten minutes is refused (REQ-LEAD-005).
+        $floodIp = '198.51.100.20'
+        $floodStatus = 0
+        $retryAfter = ''
+        for ($i = 1; $i -le 6; $i++) {
+            $flood = Send-Enquiry -Ip $floodIp -Body @{
+                answers      = @{ fullName = "Flood $i $Nonce"; email = "flood-$i-$Nonce@example.test"; message = "Message $i from one address." }
+                consent      = $true
+                captchaToken = "$captcha-f$i"
+            }
+            Write-Output "LEAD_FLOOD_$i=$($flood.Status)"
+            $floodStatus = $flood.Status
+            if ($i -eq 6) { $retryAfter = $flood.RetryAfter }
+        }
+
+        Write-Output "LEAD_FLOOD_SIXTH_STATUS=$floodStatus RETRY_AFTER=$retryAfter"
+        if ($floodStatus -ne 429) { $failures.Add("the sixth submission from one address returned $floodStatus, expected 429") }
+        if ([string]::IsNullOrWhiteSpace($retryAfter)) { $failures.Add('the 429 carried no Retry-After header') }
+
+        # 6 — D8: the row is in SQL Server, and the phase's own read endpoint returns it.
+        $leadRows = Invoke-SqlScalar -Query "SELECT COUNT(*) FROM dbo.Leads WHERE FullName = '$leadProbe';"
+        Write-Output "LEAD_DB_ROWS=$leadRows"
+        if ($leadRows -ne 1) { $failures.Add("the enquiry did not land exactly one row in dbo.Leads (found $leadRows)") }
+
+        $consentRows = Invoke-SqlScalar -Query @"
+SELECT COUNT(*) FROM dbo.ConsentRecords c
+JOIN dbo.FormSubmissions s ON s.Id = c.FormSubmissionId
+JOIN dbo.Leads l ON l.Id = s.LeadId
+WHERE l.FullName = '$leadProbe';
+"@
+        Write-Output "LEAD_CONSENT_ROWS=$consentRows"
+        if ($consentRows -ne 1) { $failures.Add("the enquiry did not store exactly one consent record (found $consentRows)") }
+
+        $leadId = Invoke-SqlScalar -Query "SELECT CAST(TOP_ID AS nvarchar(64)) FROM (SELECT TOP 1 Id AS TOP_ID FROM dbo.Leads WHERE FullName = '$leadProbe') x;"
+        $detail = Get-Status "/api/v1/leads/$leadId" -Headers $auth
+        Write-Output "LEAD_DETAIL_STATUS=$($detail.Status)"
+        if ($detail.Status -ne 200) { $failures.Add("reading the probe lead back returned $($detail.Status)") }
+        if ($detail.Content -notlike "*$leadProbe*") { $failures.Add('the lead endpoint did not return the row that is in SQL Server') }
+
+        $inbox = Get-Status '/api/v1/leads' -Headers $auth
+        Write-Output "LEAD_LIST_STATUS=$($inbox.Status) ITEMS=$(Measure-JsonArray $inbox.Content)"
+        if ($inbox.Status -ne 200) { $failures.Add("the lead inbox returned $($inbox.Status)") }
+
+        # 7 — both notifications are queued, and nothing was sent inline (REQ-NOTIF-001).
+        $queued = Invoke-SqlScalar -Query @"
+SELECT COUNT(*) FROM dbo.OutboxEmails o
+WHERE o.TemplateKey IN ('lead.acknowledgement', 'lead.owner-alert')
+  AND (o.ToAddress = '$leadEmail' OR o.Subject LIKE '%$Nonce%');
+"@
+        Write-Output "LEAD_OUTBOX_QUEUED=$queued"
+        if ($queued -lt 1) { $failures.Add("the enquiry queued $queued notifications, expected at least the acknowledgement") }
+
+        # 8 — NFR-PRIV-03: no address reaches the log intact.
+        $apiLog = Join-Path $EvidenceDirectory 'api-out.log'
+        if (Test-Path $apiLog) {
+            $leaked = @(Select-String -Path $apiLog -Pattern ([regex]::Escape($leadEmail)) -SimpleMatch).Count
+            Write-Output "LEAD_LOG_ADDRESS_IN_FULL=$leaked"
+            if ($leaked -ne 0) { $failures.Add("the submitter's address appears $leaked times in the API log, unmasked") }
+        }
     }
 }
 finally {

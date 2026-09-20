@@ -210,3 +210,60 @@ reverse proxy that already does it.
 - The forwarder is a single point every API call passes through in this deployment shape. It is
   deliberately dumb: it adds no caching, no retries and no rewriting, so there is nothing in it to
   get subtly wrong.
+
+## ADR-R06 - The CA1711 suffix allowance is narrowed, recorded, and the guardrail hash re-frozen
+
+**Status.** Accepted, P07, 2026-09-20.
+
+**Context.** The P07 gate's guardrail check (G0, R-13) reported `.editorconfig` CHANGED. The change
+was not made in P07. `.editorconfig` was last modified in P03 (`4c9f7c2`), and the hash frozen in
+`STATE.json` is still the P02 one. So the drift guard on this file has been comparing against a
+stale value since P03 and could not have fired in P04, P05 or P06: the one check whose job is to
+notice a loosened guardrail was itself broken for four phases.
+
+Two things were changed in P03, and they are not the same kind of change.
+
+The first is `generated_code = true` on the `Migrations` path section. That is the protocol's own
+carve-out for generated EF output expressed in the only file that can express it: a
+`Directory.Build.props` placed in a project subfolder is never read, because MSBuild searches
+upward from the project file, so the documented approach silently does nothing there. The scope is
+identical to the carve-out already covered by EXC-01.
+
+The second is not a carve-out. `[backend/src/**.cs]` with
+`dotnet_code_quality.CA1711.allowed_suffixes = Permission` relaxes an analyser across **all**
+hand-authored backend source, and it was made with no ADR and no `EXCEPTIONS.md` row. Under R-13
+that is a loosened warning level, and the justification written in the file is not the record the
+protocol asks for.
+
+The justification itself is sound. CA1711 reserves the suffix `Permission`, and exactly two types
+carry it: `Permission` and `RolePermission`, both in
+`backend/src/SoftwareManagement.Domain/Identity/Permission.cs`. Those are the names the approved
+data model (E-43, E-44) and the authorization matrix use, and the seeded table is `Permissions`.
+Renaming them to satisfy a naming heuristic would make the code disagree with the document it
+implements, which is a worse outcome than the suffix.
+
+**Options considered.**
+
+1. **Rename the types.** Rejected. It buys nothing and breaks the correspondence between the code
+   and the approved data model, which is the thing that makes the blueprint worth having.
+2. **Leave the relaxation as it is and only re-freeze the hash.** Rejected. It would record the
+   drift without correcting it, and it leaves an analyser disabled across every backend source file
+   to serve two type names.
+3. **Narrow the relaxation to the file that needs it, record it, re-freeze.** Chosen.
+
+**Decision.** The CA1711 section is scoped to
+`[backend/src/SoftwareManagement.Domain/Identity/Permission.cs]` rather than `[backend/src/**.cs]`,
+so any other type that acquires a reserved suffix anywhere else still fails the build. An
+`EXCEPTIONS.md` row is added for it. `STATE.json.guardrailHashes[".editorconfig"]` is re-frozen to
+the corrected file, and the P07 gate records both the old and the new value so the re-freeze is
+visible rather than silent.
+
+**Consequences.**
+
+- The drift guard on `.editorconfig` works again from P07 onward. A stale frozen hash is
+  indistinguishable from a passing check, which is why this is written down rather than fixed
+  quietly.
+- Re-freezing a guardrail hash is legal only with an ADR saying why, and this is the precedent for
+  that: the gate prints `GUARD_REFROZEN` with both hashes and the ADR id, or it fails.
+- The analyser relaxation now covers one file and two types instead of the whole backend. If a
+  third reserved suffix appears, the build fails and the decision is taken again on purpose.

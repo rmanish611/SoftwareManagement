@@ -87,6 +87,21 @@ export const routes: Routes = [
         loadComponent: () => import('./admin/leads/lead-detail').then((m) => m.LeadDetail),
         title: 'Enquiry',
       },
+      {
+        path: 'customers',
+        loadComponent: () => import('./admin/customers/organisation-list').then((m) => m.OrganisationList),
+        title: 'Customers',
+      },
+      {
+        path: 'quotes',
+        loadComponent: () => import('./admin/quotes/quote-list').then((m) => m.QuoteList),
+        title: 'Quotes',
+      },
+      {
+        path: 'quotes/:id',
+        loadComponent: () => import('./admin/quotes/quote-editor').then((m) => m.QuoteEditor),
+        title: 'Quote',
+      },
     ],
   },
   { path: '**', redirectTo: '' },

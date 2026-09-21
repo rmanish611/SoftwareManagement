@@ -4,7 +4,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, provideRouter } from '@angular/router';
-import { describeViolations, findSeriousAccessibilityViolations } from '../../../testing/accessibility';
+import { AxeTimeout, describeViolations, findSeriousAccessibilityViolations } from '../../../testing/accessibility';
 import { ProductDetail } from './product-detail';
 
 describe('ProductDetail', () => {
@@ -128,5 +128,5 @@ describe('ProductDetail', () => {
     document.body.appendChild(element());
     const violations = await findSeriousAccessibilityViolations(element());
     expect(describeViolations(violations)).toBe('');
-  });
+  }, AxeTimeout);
 });

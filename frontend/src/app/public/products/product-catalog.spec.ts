@@ -5,7 +5,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { convertToParamMap } from '@angular/router';
-import { describeViolations, findSeriousAccessibilityViolations } from '../../../testing/accessibility';
+import { AxeTimeout, describeViolations, findSeriousAccessibilityViolations } from '../../../testing/accessibility';
 import { ProductCatalog } from './product-catalog';
 
 describe('ProductCatalog', () => {
@@ -125,5 +125,5 @@ describe('ProductCatalog', () => {
     document.body.appendChild(element());
     const violations = await findSeriousAccessibilityViolations(element());
     expect(describeViolations(violations)).toBe('');
-  });
+  }, AxeTimeout);
 });

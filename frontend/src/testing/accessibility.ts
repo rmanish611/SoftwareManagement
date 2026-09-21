@@ -32,3 +32,14 @@ export function describeViolations(violations: readonly Result[]): string {
     .map((v) => `${v.impact}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(', ')})`)
     .join('\n');
 }
+
+/**
+ * How long an accessibility check is given.
+ *
+ * Vitest's default is five seconds, and the axe engine over a rendered component takes most of
+ * that on its own - so as more specs joined the suite and they began running alongside one
+ * another, these tests started timing out on a machine that was merely busy. That reads as a
+ * failing accessibility check when nothing is wrong with the markup, which is the worst kind of
+ * false alarm: the one people learn to re-run.
+ */
+export const AxeTimeout = 30_000;

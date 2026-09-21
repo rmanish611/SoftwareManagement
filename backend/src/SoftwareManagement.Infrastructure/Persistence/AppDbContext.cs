@@ -9,6 +9,7 @@ using SoftwareManagement.Domain.Crm;
 using SoftwareManagement.Domain.Identity;
 using SoftwareManagement.Domain.Leads;
 using SoftwareManagement.Domain.Notifications;
+using SoftwareManagement.Domain.Sales;
 using SoftwareManagement.Domain.Settings;
 
 namespace SoftwareManagement.Infrastructure.Persistence;
@@ -102,6 +103,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IClock clock)
     public DbSet<Organisation> Organisations => Set<Organisation>();
 
     public DbSet<Contact> Contacts => Set<Contact>();
+
+    public DbSet<Quote> Quotes => Set<Quote>();
+
+    public DbSet<QuoteLineItem> QuoteLineItems => Set<QuoteLineItem>();
+
+    public DbSet<NumberSequence> NumberSequences => Set<NumberSequence>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

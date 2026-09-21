@@ -7,6 +7,7 @@ using SoftwareManagement.Application.Catalog;
 using SoftwareManagement.Application.Content;
 using SoftwareManagement.Application.Leads;
 using SoftwareManagement.Application.Notifications;
+using SoftwareManagement.Application.Sales;
 using SoftwareManagement.Application.Security;
 using SoftwareManagement.Domain.Common;
 using SoftwareManagement.Domain.Identity;
@@ -16,6 +17,7 @@ using SoftwareManagement.Infrastructure.Content;
 using SoftwareManagement.Infrastructure.Leads;
 using SoftwareManagement.Infrastructure.Notifications;
 using SoftwareManagement.Infrastructure.Persistence;
+using SoftwareManagement.Infrastructure.Sales;
 using SoftwareManagement.Infrastructure.Security;
 using SoftwareManagement.Infrastructure.Time;
 
@@ -99,6 +101,9 @@ public static class DependencyInjection
         services.AddScoped<ILeadPipelineService, LeadPipelineService>();
         services.AddScoped<ILeadSweep, LeadSweep>();
         services.AddHostedService<LeadSweepService>();
+
+        services.AddScoped<INumberAllocator, NumberAllocator>();
+        services.AddScoped<IQuoteService, QuoteService>();
         services.AddSingleton<IEmailComposer, EmailComposer>();
         services.AddScoped<IEmailOutbox, OutboxWriter>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();

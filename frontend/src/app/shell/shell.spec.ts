@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { describeViolations, findSeriousAccessibilityViolations } from '../../testing/accessibility';
+import { AxeTimeout, describeViolations, findSeriousAccessibilityViolations } from '../../testing/accessibility';
 import { Shell } from './shell';
 
 /**
@@ -102,5 +102,5 @@ describe('Shell', () => {
     const violations = await findSeriousAccessibilityViolations(element());
 
     expect(violations, describeViolations(violations)).toHaveLength(0);
-  });
+  }, AxeTimeout);
 });

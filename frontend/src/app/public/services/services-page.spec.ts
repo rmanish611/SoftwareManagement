@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describeViolations, findSeriousAccessibilityViolations } from '../../../testing/accessibility';
+import { AxeTimeout, describeViolations, findSeriousAccessibilityViolations } from '../../../testing/accessibility';
 import { ServicesPage } from './services-page';
 
 describe('ServicesPage', () => {
@@ -67,5 +67,5 @@ describe('ServicesPage', () => {
     document.body.appendChild(element());
     const violations = await findSeriousAccessibilityViolations(element());
     expect(describeViolations(violations)).toBe('');
-  });
+  }, AxeTimeout);
 });

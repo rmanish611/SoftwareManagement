@@ -633,6 +633,109 @@ WHERE Stage = 7 AND CONVERT(nvarchar(36), MergedIntoLeadId) = '$expectedSurvivor
             }
         }
 
+        # ---------------------------------------------------------------------------------------
+        # P09 - customers and quotes.
+        # ---------------------------------------------------------------------------------------
+
+        $probeOrg = "PROBE-$Nonce"
+        $organisation = Get-Status '/api/v1/organisations' -Method 'POST' -Headers $auth -Body @{
+            legalName = $probeOrg; displayName = $probeOrg; gstin = '29ABCDE1234F1Z5'; country = 'IN'
+        }
+
+        Write-Output "ORG_CREATE_STATUS=$($organisation.Status)"
+        if ($organisation.Status -ne 201) { $failures.Add("creating an organisation returned $($organisation.Status): $($organisation.Content)") }
+
+        $orgRows = Invoke-SqlScalar "SELECT COUNT(*) FROM Organisations WHERE LegalName = '$probeOrg'"
+        Write-Output "ORG_ROWS=$orgRows"
+        if ($orgRows -ne 1) { $failures.Add("expected one organisation row, found $orgRows") }
+
+        # A GSTIN one character short, which is the commonest way it goes wrong.
+        $badGstin = Get-Status '/api/v1/organisations' -Method 'POST' -Headers $auth -Body @{
+            legalName = "$probeOrg short"; gstin = '29ABCDE1234F1Z'
+        }
+
+        Write-Output "ORG_GSTIN_SHORT_STATUS=$($badGstin.Status)"
+        Write-Output "ORG_GSTIN_SHORT_BODY=$($badGstin.Content)"
+        if ($badGstin.Status -ne 422) { $failures.Add("a 14-character GSTIN returned $($badGstin.Status), expected 422") }
+        if ($badGstin.Content -notlike '*expectedPattern*') { $failures.Add('the GSTIN refusal did not carry the expected pattern') }
+
+        $orgId = ($organisation.Content | ConvertFrom-Json).id
+
+        $contact = Get-Status "/api/v1/organisations/$orgId/contacts" -Method 'POST' -Headers $auth -Body @{
+            fullName = "Probe Buyer $Nonce"; email = "buyer-$Nonce@probe.test"; isPrimary = $true
+        }
+
+        Write-Output "CONTACT_CREATE_STATUS=$($contact.Status)"
+        if ($contact.Status -ne 201) { $failures.Add("adding a contact returned $($contact.Status): $($contact.Content)") }
+
+        $contactId = ($contact.Content | ConvertFrom-Json).id
+
+        # BR-SALE-01: twenty quotes at once must take a contiguous block. `MAX(number) + 1` cannot
+        # survive this, which is why the sequence is a locked row.
+        $quoteNumbers = New-Object System.Collections.Generic.List[string]
+        $quoteIds = New-Object System.Collections.Generic.List[string]
+
+        for ($i = 1; $i -le 20; $i++) {
+            $q = Get-Status '/api/v1/quotes' -Method 'POST' -Headers $auth -Body @{
+                organisationId = $orgId; contactId = $contactId
+            }
+
+            if ($q.Status -ne 201) { $failures.Add("creating quote $i returned $($q.Status): $($q.Content)"); continue }
+
+            $parsed = $q.Content | ConvertFrom-Json
+            $quoteNumbers.Add($parsed.quoteNumber)
+            $quoteIds.Add($parsed.id)
+        }
+
+        Write-Output "QUOTE_CREATED_COUNT=$($quoteNumbers.Count)"
+        Write-Output "QUOTE_FIRST=$($quoteNumbers[0]) QUOTE_LAST=$($quoteNumbers[$quoteNumbers.Count - 1])"
+
+        $values = @($quoteNumbers | ForEach-Object { [int]$_.Substring($_.Length - 5) } | Sort-Object)
+        $distinct = @($values | Select-Object -Unique)
+        $expectedSpan = if ($values.Count -gt 0) { $values[$values.Count - 1] - $values[0] + 1 } else { 0 }
+
+        Write-Output "QUOTE_NUMBERS_DISTINCT=$($distinct.Count) SPAN=$expectedSpan"
+        if ($distinct.Count -ne 20) { $failures.Add("twenty quotes produced $($distinct.Count) distinct numbers") }
+        if ($expectedSpan -ne 20) { $failures.Add("the twenty numbers span $expectedSpan values, so there is a gap") }
+
+        $dbNumbers = Invoke-SqlScalar "SELECT COUNT(DISTINCT QuoteNumber) FROM Quotes"
+        Write-Output "QUOTE_NUMBERS_IN_DB=$dbNumbers"
+        if ($dbNumbers -lt 20) { $failures.Add("the database holds $dbNumbers distinct quote numbers, expected at least 20") }
+
+        # BR-SALE-05: a sent quote refuses an edit and says to revise instead.
+        $firstQuote = $quoteIds[0]
+        $productId = $env:GATE_PRODUCT_ID
+
+        $lineAdded = Get-Status "/api/v1/quotes/$firstQuote/lines" -Method 'POST' -Headers $auth -Body @{
+            productId = $productId; description = 'One year, supported'; quantity = 1
+            unitPrice = 14997.00; discountAmount = 0; taxRatePercent = 18.00
+        }
+
+        Write-Output "QUOTE_LINE_STATUS=$($lineAdded.Status)"
+        if ($lineAdded.Status -ne 204) { $failures.Add("adding a quote line returned $($lineAdded.Status): $($lineAdded.Content)") }
+
+        $totals = Invoke-SqlScalar "SELECT CONVERT(varchar(32), GrandTotal) FROM Quotes WHERE CONVERT(nvarchar(36), Id) = '$firstQuote'"
+        Write-Output "QUOTE_GRAND_TOTAL=$totals"
+        if ([decimal]$totals -ne 17696.46) { $failures.Add("the quote total is $totals, expected 17696.46 (14997.00 + 2699.46 tax)") }
+
+        $sent = Get-Status "/api/v1/quotes/$firstQuote/send" -Method 'POST' -Headers $auth -Body @{}
+        Write-Output "QUOTE_SEND_STATUS=$($sent.Status)"
+        if ($sent.Status -ne 204) { $failures.Add("sending the quote returned $($sent.Status): $($sent.Content)") }
+
+        $editAfterSend = Get-Status "/api/v1/quotes/$firstQuote/lines" -Method 'POST' -Headers $auth -Body @{
+            productId = $productId; description = 'A change after sending'; quantity = 1
+            unitPrice = 100.00; discountAmount = 0; taxRatePercent = 18.00
+        }
+
+        Write-Output "QUOTE_EDIT_AFTER_SEND_STATUS=$($editAfterSend.Status)"
+        Write-Output "QUOTE_EDIT_AFTER_SEND_BODY=$($editAfterSend.Content)"
+        if ($editAfterSend.Status -ne 409) { $failures.Add("editing a sent quote returned $($editAfterSend.Status), expected 409") }
+
+        # The discount refusal needs a Sales token, and this gate database is seeded with the owner
+        # alone - who is allowed the discount. Printed rather than skipped silently; the refusal is
+        # asserted by REQ_SALE_004_A_sales_user_applying_a_twenty_percent_discount_is_refused...
+        Write-Output 'QUOTE_DISCOUNT_403_STATUS=not-checked (no Sales account in this gate database)'
+
         # 6 - NFR-AUTHZ-02: the editor is refused the pipeline outright.
         $editorLogin = Get-Status '/api/v1/auth/login' -Method 'POST' -Body @{
             email = 'editor@softwaremanagement.test'; password = $ownerPassword; twoFactorCode = $null

@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { describeViolations, findSeriousAccessibilityViolations } from '../../testing/accessibility';
+import { AxeTimeout, describeViolations, findSeriousAccessibilityViolations } from '../../testing/accessibility';
 import { Home } from './home';
 
 describe('Home', () => {
@@ -138,5 +138,5 @@ describe('Home', () => {
     const violations = await findSeriousAccessibilityViolations(element());
 
     expect(violations, describeViolations(violations)).toHaveLength(0);
-  });
+  }, AxeTimeout);
 });

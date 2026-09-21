@@ -371,3 +371,52 @@ screen showing other people's names, telephone numbers and messages should not p
 served before anyone has signed in. A signed-in browser pass was not done - it needs a password
 typed into a form - so what covers these screens is seventeen component tests and an axe pass on
 each.
+
+## P09 - Customers and quotes - DONE (2026-09-21)
+
+A qualified lead becomes a customer record and a priced, numbered, sendable quote. GSTINs are
+checked against the real pattern and refused with it; contacts are unique per company but the same
+person may appear at two, because people change jobs; a company is retired rather than removed, and
+the delete route exists only to say so and name how many quotes point at it. Quotes carry a gapless
+number per financial year, round money per line, refuse a discount above fifteen percent from
+anyone but the owner, and stop being editable the moment they are sent. 281 backend and 128
+frontend tests pass, coverage 81%.
+
+### Gapless numbering, and why it is a locked row rather than a MAX
+
+Twenty quotes created at once take `Q/2026-27/00001` through `00020`: twenty distinct numbers
+spanning exactly twenty. `MAX(number) + 1` cannot produce that, because two requests read the same
+maximum and write the same number, and two quotes carrying the same number is worse than any gap.
+The sequence is a row updated under `UPDLOCK, ROWLOCK` inside the caller's transaction, so a quote
+that fails to save takes its number back with it.
+
+### Money is rounded per line, and half away from zero
+
+14,997.00 and 2,500.00 at eighteen percent give 2,699.46 and 450.00 in tax and a total of
+20,646.46 - the sum of the rounded lines, not eighteen percent of the subtotal taken once at the
+end. A customer who adds up the printed lines has to get the printed total. .NET rounds half to
+even by default, so 0.125 would become 0.12; money is rounded away from zero here, and a test pins
+that, because an invoice that disagrees with a hand calculator by a paisa is one somebody queries.
+
+### Counting tests per requirement found five gaps, and three of them were missing features
+
+The first pass had REQ-CUST-003, 004, 006, 007 and 008 at nought or one. Part of that was labels -
+the contact tests were filed under the duplicate-GSTIN requirement - but three requirements had no
+endpoint at all. The delete that refuses with a reason, the CSV export and the postal-code check
+were built rather than the labels moved. The refusal code for a duplicate GSTIN was also corrected
+to the `GSTIN_DUPLICATE` the requirement names (ASM-19).
+
+### Two EF bugs in one afternoon, opposite to each other
+
+Adding a quote line produced totals exactly double what they should be: the line was added to the
+DbSet and to the navigation, and the change tracker's fixup had already put it in the navigation.
+Removing the explicit add then broke it the other way - an entity discovered only through a
+navigation, with a key already set, is marked Modified rather than Added, so EF issued an UPDATE
+for a row that did not exist. Both reasons are written into the code, because either fix looks
+right on its own.
+
+### A flaky accessibility check, fixed rather than re-run
+
+Past twenty spec files, four axe tests began timing out at Vitest's five-second default on a busy
+machine. A failing accessibility check where nothing is wrong with the markup is the worst kind of
+false alarm - the one people learn to re-run. Every axe test now carries an explicit timeout.

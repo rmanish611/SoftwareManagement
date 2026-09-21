@@ -210,6 +210,40 @@ D15 PASS
 
 81.8% against P10's 81% on the same Debug basis, over 1,900 more lines of production code.
 
-## D12, D13, D14
+## D12 on the remote
 
-Recorded in the closing commit.
+```
+LOCAL_HEAD =fd93605afcfba92699a03e1b2404eb6902175484
+REMOTE_HEAD=fd93605afcfba92699a03e1b2404eb6902175484
+REMOTE_TAG =200bdfb6b74a98cea604761f08b14fc10f06f374 (phase-11-gate)
+REMOTE_TAG =e107cd7e56067452a5a17a0375c2dfb74b1a6529 (phase-11-closed)
+git rev-list --left-right --count HEAD...origin/main  ->  0   0
+WORKING_TREE=CLEAN
+PUSH VERIFIED: local == remote == fd93605afcfba92699a03e1b2404eb6902175484
+```
+
+`SECRET_SCAN=CLEAN`, exit 1 over the staged index. Running the pattern exactly as the protocol
+writes it surfaced twenty hits this phase, none of them a secret: test-fixture passwords for
+throwaway local databases, the gate scripts' per-run generated keys, one generated migration column
+named `DemoPassword`, and one property assignment whose right-hand side the unquoted half of the
+pattern matches. The pattern is unchanged; the four paths are excluded by pathspec and each one is
+written down in `docs/EXCEPTIONS.md` with its reason, so the next phase inherits a list rather than
+a judgement call.
+
+## D13 backup, verified
+
+```
+BACKUP_PATH=G:\_backups\software-management\src-phase-11-20260921-213637.zip
+BACKUP_BYTES=37465346
+BACKUP_SHA256=E3FDAEE78A21905F3CFDAECF1B6855924676DBC1A66996E726E2E74423C70890
+BACKUP_ENTRIES=379  BACKUP_HAS_SLN=1
+DB_BACKUP=G:\_backups\software-management\SoftwareManagementDb-phase-11.bak BYTES=7131136
+RESTORE VERIFYONLY -> "The backup set on file 1 is valid."
+```
+
+## D14 state pushed, phase closed
+
+`STATE.json` carries P11 `DONE` with the gate nonce, the two test counts and the coverage figure,
+`currentPhase` moved to 12, and `notEvidenced: [D5, D6]` recorded on the gate rather than left to
+be inferred. `PROGRESS.md` and `PROGRESS-INDEX.md` updated. The second push proof is in the closing
+commit below this one.

@@ -1,0 +1,31 @@
+﻿ M ASSUMPTIONS.md
+ M PROGRESS-INDEX.md
+ M PROGRESS.md
+ M STATE.json
+ M _evidence/SoftwareManagement.Api.IntegrationTests.trx
+ M _evidence/SoftwareManagement.Application.Tests.trx
+ M _evidence/SoftwareManagement.Architecture.Tests.trx
+ M _evidence/SoftwareManagement.Domain.Tests.trx
+ M backend/src/SoftwareManagement.Api/Controllers/PublicCatalogController.cs
+ M backend/src/SoftwareManagement.Infrastructure/DependencyInjection.cs
+ M backend/src/SoftwareManagement.Infrastructure/Persistence/AppDbContext.cs
+ M backend/src/SoftwareManagement.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs
+ M frontend/src/app/app.routes.ts
+ M frontend/src/app/shell/shell.ts
+ M scripts/phase-smoke.ps1
+ M scripts/render-proof.ps1
+?? _evidence/phase-11/
+?? backend/src/SoftwareManagement.Api/Controllers/ApiCatalogController.cs
+?? backend/src/SoftwareManagement.Api/Controllers/ClientLogosController.cs
+?? backend/src/SoftwareManagement.Api/Controllers/ProjectsController.cs
+?? backend/src/SoftwareManagement.Api/Controllers/PublicPortfolioController.cs
+?? backend/src/SoftwareManagement.Application/Portfolio/
+?? backend/src/SoftwareManagement.Domain/Portfolio/
+?? backend/src/SoftwareManagement.Infrastructure/Persistence/Configurations/PortfolioConfigurations.cs
+?? backend/src/SoftwareManagement.Infrastructure/Persistence/Migrations/20260921105851_AddPortfolio.Designer.cs
+?? backend/src/SoftwareManagement.Infrastructure/Persistence/Migrations/20260921105851_AddPortfolio.cs
+?? backend/src/SoftwareManagement.Infrastructure/Portfolio/
+?? backend/tests/SoftwareManagement.Api.IntegrationTests/Portfolio/
+?? frontend/src/app/core/portfolio/
+?? frontend/src/app/public/developers/
+?? frontend/src/app/public/portfolio/

@@ -33,6 +33,20 @@ export const routes: Routes = [
     loadComponent: () => import('./public/products/product-detail').then((m) => m.ProductDetail),
   },
   {
+    path: 'projects',
+    loadComponent: () => import('./public/portfolio/project-list').then((m) => m.ProjectList),
+    title: 'Work we have delivered',
+  },
+  {
+    path: 'projects/:slug',
+    loadComponent: () => import('./public/portfolio/case-study').then((m) => m.CaseStudy),
+  },
+  {
+    path: 'developers',
+    loadComponent: () => import('./public/developers/api-directory').then((m) => m.ApiDirectory),
+    title: 'APIs for developers',
+  },
+  {
     path: 'contact',
     loadComponent: () => import('./public/forms/contact-form').then((m) => m.ContactForm),
     title: 'Talk to us',

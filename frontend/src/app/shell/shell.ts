@@ -45,6 +45,8 @@ import { filter } from 'rxjs';
           <a routerLink="/" routerLinkActive="is-current" [routerLinkActiveOptions]="{ exact: true }">Home</a>
           <a routerLink="/products" routerLinkActive="is-current">Software</a>
           <a routerLink="/services" routerLinkActive="is-current">Services</a>
+          <a routerLink="/projects" routerLinkActive="is-current">Work</a>
+          <a routerLink="/developers" routerLinkActive="is-current">Developers</a>
           <a routerLink="/about" routerLinkActive="is-current">About</a>
           <a class="shell__cta" routerLink="/contact" routerLinkActive="is-current">Talk to us</a>
         </nav>
@@ -58,6 +60,8 @@ import { filter } from 'rxjs';
         <nav class="shell__footer-nav" aria-label="Footer">
           <a routerLink="/products">Software</a>
           <a routerLink="/services">Services</a>
+          <a routerLink="/projects">Work</a>
+          <a routerLink="/developers">Developers</a>
           <a routerLink="/about">About</a>
           <a routerLink="/request-demo">Request a demo</a>
           <a routerLink="/request-quote">Request a quote</a>

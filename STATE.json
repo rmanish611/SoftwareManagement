@@ -1,4 +1,4 @@
-{
+﻿{
     "blueprintProgress":  [
                               "00-assumptions.md",
                               "01-research.md",
@@ -46,7 +46,7 @@
     "pass2Sha":  "4a6bfe3c1183fc03ca72bbdecf39e6ee412f8ec8",
     "blueprintFrozen":  true,
     "totalPhases":  14,
-    "currentPhase":  11,
+    "currentPhase":  12,
     "lastVerifiedPhase":  6,
     "reqCount":  138,
     "mustCount":  98,
@@ -1673,7 +1673,7 @@
 
                                                           ],
                                           "recoveryStash":  "",
-                                           "nextAction":  "P08 closed. Start P09 at B1. Organisation and Contact already exist from ASM-17; P09 adds the GSTIN rules, the status lifecycle and the screens.",
+                                          "nextAction":  "P08 closed. Start P09 at B1. Organisation and Contact already exist from ASM-17; P09 adds the GSTIN rules, the status lifecycle and the screens.",
                                           "nextActionPrecondition":  ""
                                       },
                        "gate":  {
@@ -1809,7 +1809,7 @@
 
                                                           ],
                                           "recoveryStash":  "",
-                                           "nextAction":  "P09 closed. Start P10 at B1. Organisations, Contacts, Quotes and NumberSequences exist; P10 adds Tenants, Subscriptions, Invoices and Payments and reuses the number allocator for INV.",
+                                          "nextAction":  "P09 closed. Start P10 at B1. Organisations, Contacts, Quotes and NumberSequences exist; P10 adds Tenants, Subscriptions, Invoices and Payments and reuses the number allocator for INV.",
                                           "nextActionPrecondition":  ""
                                       },
                        "gate":  {
@@ -1941,7 +1941,7 @@
 
                                                           ],
                                           "recoveryStash":  "",
-                                           "nextAction":  "P10 closed. Start P11 at B1. Portfolio and the public API directory; the billing sweep and DatabaseLock are in place for any later scheduled job.",
+                                          "nextAction":  "P10 closed. Start P11 at B1. Portfolio and the public API directory; the billing sweep and DatabaseLock are in place for any later scheduled job.",
                                           "nextActionPrecondition":  ""
                                       },
                        "gate":  {
@@ -1961,7 +1961,7 @@
                    {
                        "id":  11,
                        "name":  "Portfolio and public API directory",
-                       "status":  "PENDING",
+                       "status":  "DONE",
                        "startedUtc":  "",
                        "finishedUtc":  "",
                        "goal":  "Delivered projects, case studies with real numbers, client logos and the public API catalogue.",
@@ -2081,13 +2081,23 @@
 
                                                           ],
                                           "recoveryStash":  "",
-                                          "nextAction":  "",
+                                          "nextAction":  "P11 closed. Start P12 at B1. Reporting and dashboards; the portfolio, the catalogue and billing all have public and admin endpoints to report on.",
                                           "nextActionPrecondition":  ""
                                       },
                        "gate":  {
-                                    "nonce":  "",
-                                    "startedUtc":  "",
-                                    "transcriptSha256":  ""
+                                    "nonce":  "p11a",
+                                    "startedUtc":  "2026-09-21T16:03:10Z",
+                                    "transcriptSha256":  "",
+                                    "coverage":  {
+                                                     "line":  81.8,
+                                                     "basis":  "Debug"
+                                                 },
+                                    "backendTests":  358,
+                                    "frontendTests":  164,
+                                    "notEvidenced":  [
+                                                         "D5",
+                                                         "D6"
+                                                     ]
                                 },
                        "errorBudget":  {
                                            "signatures":  {

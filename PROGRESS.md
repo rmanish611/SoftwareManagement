@@ -457,3 +457,64 @@ twenty-five oldest unanswered. They ask for their lead by name now.
 The fifth was worse. `The_newest_enquiry_is_the_first_one_the_owner_sees` was still asserting the
 ordering P08 deliberately replaced, and had been passing only because nothing else in that database
 was older. It now asserts what the inbox is actually for, and says in the test why it changed.
+
+## P11 — Portfolio and public API directory
+
+REQ-PRJ-001..009, REQ-API-001..008. 358 backend tests (45 new), 164 frontend tests (16 new),
+coverage 81.8%. Tag `phase-11-closed`.
+
+Delivered work is now on the site: `/projects` with an industry filter, a case study per project at
+`/projects/:slug`, and `/developers` listing every published API with its base URL, auth scheme,
+current version and any sunset date. Behind them: projects with case studies and outcome metrics,
+client logos with a permission flag, testimonial linkage, an API catalogue with versions, a
+current-version rule and a deprecation rule with notice.
+
+### The client's name is the client's to give
+
+Three separate rules turned out to be the same rule. A project has a `ClientDisplayName`, a logo has
+a `HasPermission`, and a testimonial has its own. `PublicClientLabel()` decides what a visitor may
+be told, on the server, once — so a new client of this API cannot get it wrong, and a permission
+withdrawn is a permission gone on the next request rather than on the next deployment. Publishing
+refuses only the contradiction: a client named in the free-text field while their logo says
+permission was never given.
+
+The same shape governs testimonials. A quote without permission, or without a name and a role
+behind it, stops publishing with a 422 rather than being silently dropped from the rendered page.
+Silently dropping it would leave the editor who attached it believing it was published.
+
+### A case study needs a number
+
+`PublishingShortfalls()` returns what is missing rather than a boolean, and the 422 carries the list
+in a `shortfalls` extension. "Significantly improved" is not an outcome; 40 percent faster is. A
+metric with a value and no unit is refused for the same reason — "reduced by 40" is a claim and
+"reduced by 40 percent" is a measurement.
+
+### Exactly one version to build against
+
+`IX_ApiVersions_OneCurrent`, a unique index filtered on `[IsCurrent] = 1`, makes two current
+versions impossible in the database rather than in every write path that might forget. It earned its
+keep immediately: `MakeCurrentAsync` cleared the old flag and set the new one in a single
+`SaveChangesAsync`, EF gave the two UPDATEs no order, and about half the runs hit the index. It is
+two saves in one transaction now — clear, then set — with the reason written where the next person
+will read it.
+
+Deprecation carries the other half: at least 90 days' notice, counted from the day it is applied,
+and never on the only version anybody can use. The refusal names both the days given and the days
+required, so nobody has to work out what would have been acceptable.
+
+### Structured data that is actually in the HTML
+
+Angular removes `<script>` elements from component templates. A JSON-LD block written there is
+silently absent from the rendered page — it looks right in the browser and tells a crawler nothing.
+The case-study page builds the element through the injected `DOCUMENT` and appends it to the head,
+which works under SSR, and the render proof now parses what came back over HTTP rather than
+trusting the component (ASM-25, ASM-26).
+
+### The render proof was about to prove the wrong thing
+
+`render-proof.ps1` ran `_publish/api`, and publishing has been off since P07. The published DLL on
+this machine is a build from 20 September: the three new routes would have rendered as empty shells
+against an API that has never heard of them, and the run would have passed if the markers had been
+test ids rather than content. It now has the same `-FromSource` switch the smoke has, prints which
+binary it ran, and the markers are a project title, an outcome sentence and an API name — none of
+which can appear without the data.

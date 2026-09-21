@@ -860,6 +860,164 @@ WHERE Stage = 7 AND CONVERT(nvarchar(36), MergedIntoLeadId) = '$expectedSurvivor
             # a check that passed.
             Write-Output "PIPELINE_EDITOR_LEADS_STATUS=not-checked (no editor account in this gate database)"
         }
+
+        # ---------------------------------------------------------------------------------------
+        # P11 - the portfolio and the developer directory.
+        # ---------------------------------------------------------------------------------------
+
+        # 1 - REQ-PRJ-001: a project reaches the database.
+        $probeProject = "PROBE-$Nonce"
+        $projectSlug = "probe-project-$Nonce"
+
+        $projectCreated = Get-Status '/api/v1/admin/projects' -Method 'POST' -Headers $auth -Body @{
+            title = $probeProject; slug = $projectSlug; industry = 'Healthcare'
+            summary = 'A delivered project written by the phase smoke.'
+            startedOn = '2026-01-01'; completedOn = '2026-04-01'
+        }
+
+        Write-Output "PROJECT_CREATE_STATUS=$($projectCreated.Status)"
+        if ($projectCreated.Status -ne 201) { $failures.Add("creating a project returned $($projectCreated.Status): $($projectCreated.Content)") }
+
+        $projectId = ($projectCreated.Content | ConvertFrom-Json).id
+
+        $projectRows = Invoke-SqlScalar "SELECT COUNT(*) FROM Projects WHERE Title = '$probeProject'"
+        Write-Output "PROJECT_ROWS=$projectRows"
+        if ($projectRows -ne 1) { $failures.Add("expected one project row, found $projectRows") }
+
+        # 2 - REQ-PRJ-002: a case study with no outcome metric cannot be published.
+        Get-Status "/api/v1/admin/projects/$projectId/case-study" -Method 'PUT' -Headers $auth -Body @{
+            problem = 'Three systems that did not talk to each other.'
+            approach = 'One schema, one import, and a month of double-running.'
+            outcome = 'The month-end close went from nine days to two.'
+            metrics = @()
+        } | Out-Null
+
+        $noMetric = Get-Status "/api/v1/admin/projects/$projectId/publish" -Method 'POST' -Headers $auth
+        Write-Output "CASE_STUDY_NO_METRIC_STATUS=$($noMetric.Status)"
+        Write-Output "CASE_STUDY_NO_METRIC_BODY=$($noMetric.Content)"
+        if ($noMetric.Status -ne 422) { $failures.Add("publishing a case study with no metric returned $($noMetric.Status), expected 422") }
+        if ($noMetric.Content -notlike '*CASE_STUDY_NOT_READY*') { $failures.Add('the case-study refusal did not carry the code') }
+
+        # With a measured outcome it publishes.
+        Get-Status "/api/v1/admin/projects/$projectId/case-study" -Method 'PUT' -Headers $auth -Body @{
+            problem = 'Three systems that did not talk to each other.'
+            approach = 'One schema, one import, and a month of double-running.'
+            outcome = 'The month-end close went from nine days to two.'
+            metrics = @(@{ label = 'Month-end close'; value = 78; unit = 'percent faster' })
+        } | Out-Null
+
+        $projectPublished = Get-Status "/api/v1/admin/projects/$projectId/publish" -Method 'POST' -Headers $auth
+        Write-Output "PROJECT_PUBLISH_STATUS=$($projectPublished.Status)"
+        if ($projectPublished.Status -ne 204) { $failures.Add("publishing the project returned $($projectPublished.Status): $($projectPublished.Content)") }
+
+        # 3 - REQ-PRJ-003: a client logo without permission renders the anonymised label.
+        $logoUpload = Send-PngUpload -Token $token -BaseUrl $baseUrl -Nonce "logo$Nonce"
+
+        if ($logoUpload.Status -eq 201) {
+            $logoAssetId = ($logoUpload.Content | ConvertFrom-Json).id
+
+            $logo = Get-Status '/api/v1/admin/client-logos' -Method 'POST' -Headers $auth -Body @{
+                displayName = "Northwind $Nonce"; mediaAssetId = $logoAssetId; hasPermission = $false; sortOrder = 1
+            }
+
+            Write-Output "CLIENT_LOGO_CREATE_STATUS=$($logo.Status)"
+            if ($logo.Status -ne 201) { $failures.Add("recording a client logo returned $($logo.Status): $($logo.Content)") }
+
+            $logoId = ($logo.Content | ConvertFrom-Json).id
+            $anonSlug = "anon-project-$Nonce"
+
+            $anonCreated = Get-Status '/api/v1/admin/projects' -Method 'POST' -Headers $auth -Body @{
+                title = "ANON-$Nonce"; slug = $anonSlug; industry = 'Healthcare'
+                summary = 'A project for a client who has not agreed to be named.'
+                startedOn = '2026-02-01'; clientLogoId = $logoId
+            }
+
+            $anonId = ($anonCreated.Content | ConvertFrom-Json).id
+            Get-Status "/api/v1/admin/projects/$anonId/publish" -Method 'POST' -Headers $auth | Out-Null
+
+            $anonPage = Get-Status "/api/v1/public/projects/$anonSlug"
+            $anonClient = ($anonPage.Content | ConvertFrom-Json).client
+            Write-Output "ANON_CLIENT_LABEL=$anonClient"
+
+            if ($anonClient -ne 'a leading healthcare company') {
+                $failures.Add("the anonymised label was '$anonClient', expected 'a leading healthcare company'")
+            }
+
+            if ($anonPage.Content -like "*Northwind $Nonce*") {
+                $failures.Add('the public page named a client who has not agreed to be named')
+            }
+
+            # The wall itself carries only the permitted ones.
+            $wall = Get-Status '/api/v1/public/client-logos'
+            if ($wall.Content -like "*Northwind $Nonce*") { $failures.Add('the logo wall showed a logo without permission') }
+        }
+        else {
+            Write-Output "CLIENT_LOGO_CREATE_STATUS=not-checked (the media upload returned $($logoUpload.Status))"
+            $failures.Add("the client-logo check could not run: the upload returned $($logoUpload.Status)")
+        }
+
+        # 4 - REQ-API-003: a thirty-day sunset is refused, a hundred and twenty days is accepted.
+        $apiSlug = "probe-api-$Nonce"
+
+        $apiCreated = Get-Status '/api/v1/admin/api-catalog' -Method 'POST' -Headers $auth -Body @{
+            name = "Probe API $Nonce"; slug = $apiSlug
+            purpose = 'Raise invoices and record payments from your own systems.'
+            baseUrl = 'https://api.example.test/probe'; authScheme = 'OAuth2'
+            docsUrl = 'https://docs.example.test/probe'; hasSandbox = $true
+        }
+
+        Write-Output "API_CREATE_STATUS=$($apiCreated.Status)"
+        if ($apiCreated.Status -ne 201) { $failures.Add("creating an API entry returned $($apiCreated.Status): $($apiCreated.Content)") }
+
+        $apiId = ($apiCreated.Content | ConvertFrom-Json).id
+
+        $firstVersion = Get-Status "/api/v1/admin/api-catalog/$apiId/versions" -Method 'POST' -Headers $auth -Body @{
+            versionLabel = '1.0'; status = 'Stable'; releasedOn = '2026-01-01'
+        }
+
+        $secondVersion = Get-Status "/api/v1/admin/api-catalog/$apiId/versions" -Method 'POST' -Headers $auth -Body @{
+            versionLabel = '2.0'; status = 'Stable'; releasedOn = '2026-06-01'
+        }
+
+        $oldVersionId = ($firstVersion.Content | ConvertFrom-Json).id
+        $newVersionId = ($secondVersion.Content | ConvertFrom-Json).id
+
+        Get-Status "/api/v1/admin/api-catalog/versions/$newVersionId/current" -Method 'POST' -Headers $auth | Out-Null
+
+        $soon = Get-Status "/api/v1/admin/api-catalog/versions/$oldVersionId/deprecate" -Method 'POST' -Headers $auth -Body @{
+            sunsetDate = (Get-Date).AddDays(30).ToString('yyyy-MM-dd')
+        }
+
+        Write-Output "SUNSET_30_DAY_STATUS=$($soon.Status)"
+        Write-Output "SUNSET_30_DAY_BODY=$($soon.Content)"
+        if ($soon.Status -ne 422) { $failures.Add("a thirty-day sunset returned $($soon.Status), expected 422") }
+        if ($soon.Content -notlike '*SUNSET_TOO_SOON*') { $failures.Add('the sunset refusal did not carry the code') }
+
+        $sunsetDate = (Get-Date).AddDays(120).ToString('yyyy-MM-dd')
+
+        $inTime = Get-Status "/api/v1/admin/api-catalog/versions/$oldVersionId/deprecate" -Method 'POST' -Headers $auth -Body @{
+            sunsetDate = $sunsetDate
+        }
+
+        Write-Output "SUNSET_120_DAY_STATUS=$($inTime.Status)"
+        if ($inTime.Status -ne 204) { $failures.Add("a hundred-and-twenty-day sunset returned $($inTime.Status): $($inTime.Content)") }
+
+        $apiPublished = Get-Status "/api/v1/admin/api-catalog/$apiId/publish" -Method 'POST' -Headers $auth
+        Write-Output "API_PUBLISH_STATUS=$($apiPublished.Status)"
+        if ($apiPublished.Status -ne 204) { $failures.Add("publishing the API entry returned $($apiPublished.Status): $($apiPublished.Content)") }
+
+        $currentRows = Invoke-SqlScalar "SELECT COUNT(*) FROM ApiVersions WHERE CONVERT(nvarchar(36), ApiCatalogEntryId) = '$apiId' AND IsCurrent = 1"
+        Write-Output "API_CURRENT_VERSION_ROWS=$currentRows"
+        if ($currentRows -ne 1) { $failures.Add("expected exactly one current version, found $currentRows") }
+
+        $directory = Get-Status '/api/v1/public/apis'
+        if ($directory.Content -notlike "*$sunsetDate*") { $failures.Add('the public directory did not carry the sunset date') }
+
+        # The sitemap carries the published work and nothing still in draft (REQ-API-007).
+        $sitemap = Get-Status '/api/v1/public/sitemap.xml'
+        Write-Output "SITEMAP_STATUS=$($sitemap.Status)"
+        if ($sitemap.Content -notlike "*<loc>/developers/$apiSlug</loc>*") { $failures.Add('the sitemap omitted the published API entry') }
+        if ($sitemap.Content -notlike "*<loc>/projects/$projectSlug</loc>*") { $failures.Add('the sitemap omitted the published project') }
     }
 }
 finally {

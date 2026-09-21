@@ -9,6 +9,7 @@ using SoftwareManagement.Domain.Crm;
 using SoftwareManagement.Domain.Identity;
 using SoftwareManagement.Domain.Leads;
 using SoftwareManagement.Domain.Notifications;
+using SoftwareManagement.Domain.Portfolio;
 using SoftwareManagement.Domain.Sales;
 using SoftwareManagement.Domain.Settings;
 
@@ -119,6 +120,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IClock clock)
     public DbSet<Invoice> Invoices => Set<Invoice>();
 
     public DbSet<Payment> Payments => Set<Payment>();
+
+    public DbSet<Project> Projects => Set<Project>();
+
+    public DbSet<CaseStudy> CaseStudies => Set<CaseStudy>();
+
+    public DbSet<ClientLogo> ClientLogos => Set<ClientLogo>();
+
+    public DbSet<ApiCatalogEntry> ApiCatalogEntries => Set<ApiCatalogEntry>();
+
+    public DbSet<ApiVersion> ApiVersions => Set<ApiVersion>();
+
+    public DbSet<ProjectTechnology> ProjectTechnologies => Set<ProjectTechnology>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

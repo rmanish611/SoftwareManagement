@@ -153,7 +153,26 @@ public sealed class PublicCatalogController(
                 : RedirectPermanent(redirect.ToPath);
         }
 
-        var page = PublicProductPage.From(product);
+        // The portfolio and the directory are queried separately rather than included above: they
+        // hang off the product by a nullable key, and pulling them through the same Include chain
+        // would multiply the already-wide plan and feature rows for no gain.
+        var projects = await _dbContext.Projects
+            .AsNoTracking()
+            .Where(p => p.ProductId == product.Id
+                && (p.Status == ContentStatus.Published || p.Status == ContentStatus.Modified))
+            .OrderByDescending(p => p.CompletedOn ?? p.StartedOn)
+            .Select(p => new PublicProductProject(p.Title, p.Slug, p.Industry, p.Summary, p.CaseStudy != null))
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var apis = await _dbContext.ApiCatalogEntries
+            .AsNoTracking()
+            .Where(a => a.ProductId == product.Id
+                && (a.Status == ContentStatus.Published || a.Status == ContentStatus.Modified))
+            .OrderBy(a => a.Name)
+            .Select(a => new PublicProductApi(a.Name, a.Slug, a.Purpose))
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var page = PublicProductPage.From(product, projects, apis);
 
         await CountViewAsync("/products/" + product.Slug, cancellationToken).ConfigureAwait(false);
         return Ok(page);
@@ -247,6 +266,12 @@ public sealed record PublicFaq(string Question, string Answer);
 
 public sealed record PublicDemo(string Url, string? Username, string? Password);
 
+/// <summary>Delivered work that used this product, so the catalogue and the portfolio point at each other (REQ-PRJ-005).</summary>
+public sealed record PublicProductProject(string Title, string Slug, string Industry, string Summary, bool HasCaseStudy);
+
+/// <summary>A published API this product exposes (REQ-API-005).</summary>
+public sealed record PublicProductApi(string Name, string Slug, string Purpose);
+
 public sealed record PublicProductPage(
     string Name,
     string Slug,
@@ -261,9 +286,14 @@ public sealed record PublicProductPage(
     IReadOnlyList<PublicScreenshot> Screenshots,
     IReadOnlyList<PublicPlan> Plans,
     IReadOnlyList<PublicFaq> Faqs,
-    PublicDemo? Demo)
+    PublicDemo? Demo,
+    IReadOnlyList<PublicProductProject> Projects,
+    IReadOnlyList<PublicProductApi> Apis)
 {
-    public static PublicProductPage From(Product product)
+    public static PublicProductPage From(
+        Product product,
+        IReadOnlyList<PublicProductProject> projects,
+        IReadOnlyList<PublicProductApi> apis)
     {
         ArgumentNullException.ThrowIfNull(product);
 
@@ -325,6 +355,8 @@ public sealed record PublicProductPage(
             screenshots,
             plans,
             [.. product.Faqs.Where(f => f.IsPublished).OrderBy(f => f.SortOrder).Select(f => new PublicFaq(f.Question, f.Answer))],
-            demo);
+            demo,
+            projects,
+            apis);
     }
 }

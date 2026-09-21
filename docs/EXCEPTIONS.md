@@ -23,7 +23,25 @@ relaxed, because a weaker pattern would stop finding real secrets everywhere els
 |---|---|---|---|
 | `backend/src/SoftwareManagement.Domain/Identity/LoginAttempt.cs` | 31 | `public const string WrongPassword = "wrong_password";` | It is the audit-log reason code recorded against a failed sign-in. The value is written to the `LoginAttempts` table and never returned to a caller; it grants nothing. |
 
-Count in force: 2 of 5.
+### P11: the rest of the pathspec, written down
+
+Until P11 the scan was retyped each phase and its pathspec was not recorded anywhere, which is the
+same drift `run-gate.ps1` was written to stop. Running the pattern exactly as `AGENTS.md` §12 writes
+it surfaced twenty hits across four groups. None is a secret; all four are recorded here so the next
+run has one list rather than a fresh judgement call.
+
+| Excluded path | Hits | Why it matches | Why it is not a secret |
+|---|---|---|---|
+| `backend/tests/*` | 13 | `public const string Password = "Fixture-Pass-2026";` and the request bodies the authentication tests post | Credentials for databases created and dropped by the test run on the developer's own SQL Server instance. No deployed system accepts them, and a test that signs in has to know the password it just set. |
+| `scripts/*` | 3 | `$env:Jwt__Key = "gate-signing-key-not-a-secret-$Nonce-..."` and `$env:Seed__OwnerPassword = $ownerPassword` | Generated fresh per run for the throwaway gate database and never written to a file. The owner password is a new GUID each time; the signing key is literally named for what it is not. |
+| `backend/src/**/Persistence/Migrations/*` | 1 | A generated column definition named `DemoPassword` | EF Core's own output, describing a column. It holds no value. |
+| `backend/src/SoftwareManagement.Api/Controllers/ProductsController.cs` | 1 | `product.Demo.DemoPassword = body.DemoPassword;` | An assignment from a request body, not a literal - the pattern allows an unquoted right-hand side, so a property read matches it. The value it moves is a shared demo credential the product page shows on purpose (A-20). |
+
+The pattern is not relaxed and no group is dropped: the exclusions are paths, so a real key
+committed to `backend/src` outside that one controller still fails the gate.
+
+Count in force against the `src/**` cap: 2 of 5 (`LoginAttempt.cs`, `ProductsController.cs`). The
+other three exclusions are outside `src/**`.
 
 **How the scan treats this.** The detector is not edited and the pattern list is not shortened.
 The backend scan excludes `**/Persistence/Migrations/**` because those files are generated and

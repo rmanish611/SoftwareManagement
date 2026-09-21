@@ -25,7 +25,17 @@ param(
     [string]$Nonce = 'render',
     [int]$ApiPort = 5199,
     [int]$SsrPort = 4300,
-    [string]$EvidenceDirectory
+    [string]$EvidenceDirectory,
+
+    # A route whose server-rendered HTML must carry parseable JSON-LD (NFR-SEO-04). Checked here
+    # rather than in a component test because the claim is about what a crawler receives, and a
+    # crawler does not run the component.
+    [string]$JsonLdRoute,
+
+    # Run the API from source instead of from _publish/api, for the same reason phase-smoke.ps1
+    # has this switch: publishing is off for this project until the hosting target is chosen. It
+    # changes what the run proves, and the run prints which mode it was in.
+    [switch]$FromSource
 )
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
@@ -60,9 +70,18 @@ $env:Jwt__Issuer = 'software-management-gate'
 $env:Jwt__Audience = 'software-management-gate'
 $env:Database__MigrateOnStartup = 'true'
 
+$apiDll = if ($FromSource) {
+    Join-Path $repoRoot 'backend\src\SoftwareManagement.Api\bin\Debug\net10.0\SoftwareManagement.Api.dll'
+}
+else {
+    Join-Path $repoRoot '_publish\api\SoftwareManagement.Api.dll'
+}
+
+Write-Output ("API_SOURCE=$apiDll" + $(if ($FromSource) { ' - NOT the published artefact' } else { '' }))
+
 $api = Start-Process -FilePath 'dotnet' `
-    -ArgumentList (Join-Path $repoRoot '_publish\api\SoftwareManagement.Api.dll') `
-    -WorkingDirectory (Join-Path $repoRoot '_publish\api') `
+    -ArgumentList $apiDll `
+    -WorkingDirectory (Split-Path -Parent $apiDll) `
     -RedirectStandardOutput (Join-Path $EvidenceDirectory 'render-api-out.log') `
     -RedirectStandardError (Join-Path $EvidenceDirectory 'render-api-err.log') `
     -PassThru -NoNewWindow
@@ -121,6 +140,38 @@ try {
         if ($page.Status -ne 200) { $failures.Add("$route answered $($page.Status)") }
         if ($marker -and $found -eq 'no') { $failures.Add("$route did not contain '$marker' in the server-rendered HTML") }
         $routesChecked++
+    }
+
+    if ($JsonLdRoute) {
+        $structured = Get-Page "http://127.0.0.1:$SsrPort$JsonLdRoute"
+        $blocks = [regex]::Matches(
+            $structured.Content,
+            '<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>',
+            [System.Text.RegularExpressions.RegexOptions]::Singleline)
+
+        Write-Output "JSONLD_ROUTE=$JsonLdRoute BLOCKS=$($blocks.Count)"
+
+        if ($blocks.Count -lt 1) {
+            $failures.Add("$JsonLdRoute carried no JSON-LD in the server-rendered HTML")
+        }
+        else {
+            foreach ($block in $blocks) {
+                $raw = [System.Net.WebUtility]::HtmlDecode($block.Groups[1].Value)
+                try {
+                    $data = $raw | ConvertFrom-Json
+                    $type = $data.'@type'
+                    Write-Output "JSONLD_TYPE=$type HEADLINE=$($data.headline) PUBLISHED=$($data.datePublished)"
+
+                    foreach ($field in @('@context', '@type', 'headline', 'datePublished')) {
+                        if (-not $data.$field) { $failures.Add("the JSON-LD on $JsonLdRoute has no $field") }
+                    }
+                }
+                catch {
+                    Write-Output "JSONLD_PARSE=FAIL"
+                    $failures.Add("the JSON-LD on $JsonLdRoute did not parse: $($_.Exception.Message)")
+                }
+            }
+        }
     }
 
     # A missing file must be a 404, not an HTML page a browser would try to run as JavaScript.

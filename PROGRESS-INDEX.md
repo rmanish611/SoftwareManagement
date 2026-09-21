@@ -15,3 +15,4 @@ P07 | DONE | tag phase-07-closed | sha 58c1944 | REQ-LEAD-001..008, REQ-NOTIF-00
 P08 | DONE | tag phase-08-closed | sha 8fa9169 | REQ-LEAD-009..018 | tests 235 BE + 110 FE | cov 80.2% (Debug basis) | ADR: none new | BLK: BLK-1 open, D5/D6 not evidenced | next: P09 start B1
 P09 | DONE | tag phase-09-closed | sha 46d2f16 | REQ-CUST-001..008, REQ-SALE-001..006 | tests 281 BE + 128 FE | cov 81% (Debug basis) | ASM-19, ASM-20 | BLK: BLK-1 open, D5/D6 not evidenced | next: P10 start B1
 P10 | DONE | tag phase-10-closed | sha 15c02cf | REQ-SALE-007..016 | tests 313 BE + 148 FE | cov 81% (Debug basis) | ASM-21, ASM-22 | BLK: BLK-1 open, D5/D6 not evidenced | next: P11 start B1
+P11 | DONE | tag phase-11-closed | sha PENDING | REQ-PRJ-001..009, REQ-API-001..008 | tests 358 BE + 164 FE | cov 81.8% (Debug basis) | ASM-23..26 | BLK: BLK-1 open, D5/D6 not evidenced | next: P12 start B1

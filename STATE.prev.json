@@ -39,14 +39,14 @@
     "schemaVersion":  2,
     "requirementsSha256":  "B752D3F8174396AEC9C9730B4009F6E52ACC35CF5ECE34F366EB99CFFB69B5EF",
     "pass1Sha":  "412d4e06ba28b6543992c23a18c110467c0f632e",
-    "lastUpdatedUtc":  "2026-09-20T10:31:33.8508715Z",
+    "lastUpdatedUtc":  "2026-09-21T05:20:00.0000000Z",
     "briefRevisedUtc":  "2026-09-06T17:04:31.134Z",
     "protocolSha256":  "2E34D263B3EC9816A115C7908D429DFF32AA9EE2FF1C7A51E3BA8AAFDA47FEEA",
     "intentLock":  "Software Management is the corporate website of the owner\u0027s own software company. Its primary user is a prospective customer (an SMB owner or IT decision-maker in India first, global later) who wants to see what the company builds, open a live demo of a product such as the ERP or the hospital-management SaaS, and get in touch. The three most important jobs: (1) present the company and its product catalogue credibly, the way a large IT vendor does - company profile, services, technology stack, product pages with features, screenshots, plans, demo and API links, projects and case studies; (2) turn visitors into leads - contact, demo request, quote or tenant request - through spam-safe forms with notifications and a lead pipeline the owner works from the admin panel; (3) let the owner run the site and the sales record without a developer - CMS-style management of every public section plus recording the tenants and subscriptions sold and their lifecycle. Explicitly out of scope: licence-key delivery, a marketplace for third-party sellers, and the functionality of the SaaS products themselves.",
     "pass2Sha":  "4a6bfe3c1183fc03ca72bbdecf39e6ee412f8ec8",
     "blueprintFrozen":  true,
     "totalPhases":  14,
-    "currentPhase":  7,
+    "currentPhase":  8,
     "lastVerifiedPhase":  6,
     "reqCount":  138,
     "mustCount":  98,
@@ -1419,9 +1419,9 @@
                    {
                        "id":  7,
                        "name":  "Lead capture",
-                       "status":  "GATE_RUNNING",
+                       "status":  "DONE",
                        "startedUtc":  "2026-09-20T10:30:11.8837628Z",
-                       "finishedUtc":  "",
+                       "finishedUtc":  "2026-09-21T05:20:00.0000000Z",
                        "goal":  "A visitor\u0027s enquiry is captured, protected from bots, consented, acknowledged and never silently lost.",
                        "reqIds":  [
                                       "REQ-LEAD-001",
@@ -1539,7 +1539,7 @@
 
                                                           ],
                                           "recoveryStash":  "",
-                                          "nextAction":  "Run scripts/run-gate.ps1 for P07, then G9 commit+push, G10 backup, G11 close.",
+                                          "nextAction":  "P07 closed. Start P08 at B1. BLK-1 stays open: D5 and D6 are unevidenced until Smart App Control is lifted and a hosting target is chosen.",
                                           "nextActionPrecondition":  ""
                                       },
                        "gate":  {

@@ -128,4 +128,22 @@ public sealed record RateLimitDecision(bool Allowed, int RetryAfterSeconds)
 public interface ISlaCalculator
 {
     DateTime FirstResponseDueUtc(DateTime receivedUtc);
+
+    /// <summary>
+    /// How much working time passed between two instants, which is what the response-time report
+    /// means by "answered in two hours" (BR-LEAD-10).
+    ///
+    /// Counting wall-clock hours would make every enquiry that arrived on a Friday evening look
+    /// like a two-day failure, and the number nobody believes is the number nobody acts on.
+    /// </summary>
+    TimeSpan BusinessTimeBetween(DateTime fromUtc, DateTime toUtc);
+}
+
+/// <summary>
+/// The days the office is shut, as the SLA clock needs them: already resolved for a given year, so
+/// the calculator does not have to know that some holidays recur and others move.
+/// </summary>
+public interface IHolidayCalendar
+{
+    bool IsHoliday(DateOnly localDate);
 }

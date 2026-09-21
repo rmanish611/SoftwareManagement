@@ -106,6 +106,8 @@ public class EmailTemplate : AuditableEntity
     public const string LeadAcknowledgement = "lead.acknowledgement";
     public const string LeadOwnerAlert = "lead.owner-alert";
     public const string OutboxDeadLettered = "outbox.dead-lettered";
+    public const string LeadFollowUpDue = "lead.follow-up-due";
+    public const string LeadGoneCold = "lead.gone-cold";
 
     public string Key { get; set; } = string.Empty;
 

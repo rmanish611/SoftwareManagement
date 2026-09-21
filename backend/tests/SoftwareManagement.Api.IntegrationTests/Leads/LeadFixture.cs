@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SoftwareManagement.Api.IntegrationTests.Content;
 using SoftwareManagement.Domain.Identity;
+using SoftwareManagement.Domain.Leads;
 using SoftwareManagement.Infrastructure.Persistence;
 
 namespace SoftwareManagement.Api.IntegrationTests.Leads;
@@ -89,7 +90,12 @@ public sealed class LeadFixture : ConfiguredApiFactory, IAsyncLifetime
         await db.OutboxEmails.ExecuteDeleteAsync();
         await db.ConsentRecords.ExecuteDeleteAsync();
         await db.FormSubmissions.ExecuteDeleteAsync();
+        await db.LeadActivities.ExecuteDeleteAsync();
+
+        // A lead points at the customer record it became, so the leads go before the companies do.
         await db.Leads.ExecuteDeleteAsync();
+        await db.Contacts.ExecuteDeleteAsync();
+        await db.Organisations.ExecuteDeleteAsync();
     }
 
     public new Task DisposeAsync() => Task.CompletedTask;
@@ -150,6 +156,57 @@ public sealed class LeadFixture : ConfiguredApiFactory, IAsyncLifetime
     }
 
     public IServiceScope NewScope() => Services.CreateScope();
+
+    /// <summary>
+    /// One lead, written straight to the database.
+    ///
+    /// The pipeline tests are about what happens to a lead after it exists, and going through the
+    /// public form for each of them would mean every test also depended on the captcha, the rate
+    /// limiter and the duplicate window - so a change to any of those would fail tests about
+    /// merging. The capture path has its own tests.
+    /// </summary>
+    public async Task<Guid> AddLeadAsync(
+        string nonce,
+        DateTime? createdAtUtc = null,
+        string? email = null,
+        string? companyName = "Probe Industries")
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var sla = scope.ServiceProvider.GetRequiredService<SoftwareManagement.Application.Leads.ISlaCalculator>();
+
+        var created = createdAtUtc ?? DateTime.UtcNow;
+
+        var lead = new Lead
+        {
+            Id = Guid.NewGuid(),
+            FullName = $"PROBE-{nonce}",
+            Email = email ?? $"probe-{nonce}@example.test",
+            CompanyName = companyName,
+            Message = $"An enquiry about the system, reference {nonce}.",
+            Stage = LeadStage.New,
+            Source = LeadSource.Direct,
+            CreatedAtUtc = created,
+            SlaDueAtUtc = sla.FirstResponseDueUtc(created),
+            CreatedBy = "test-fixture",
+        };
+
+        db.Leads.Add(lead);
+        await db.SaveChangesAsync();
+
+        // The audit stamp overwrites CreatedAtUtc on insert, which is right for the application and
+        // wrong for a test that needs a lead from three days ago. Put it back, and put the deadline
+        // back with it so the two agree.
+        if (createdAtUtc is { } backdated)
+        {
+            await db.Leads.Where(l => l.Id == lead.Id)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(l => l.CreatedAtUtc, backdated)
+                    .SetProperty(l => l.SlaDueAtUtc, sla.FirstResponseDueUtc(backdated)));
+        }
+
+        return lead.Id;
+    }
 
     private sealed record LoginRow(string AccessToken);
 }

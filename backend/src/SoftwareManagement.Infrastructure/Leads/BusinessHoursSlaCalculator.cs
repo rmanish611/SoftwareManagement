@@ -5,67 +5,73 @@ using SoftwareManagement.Application.Leads;
 namespace SoftwareManagement.Infrastructure.Leads;
 
 /// <summary>
-/// When a first reply is owed.
+/// When a first reply is owed, and how long one actually took.
 ///
-/// Counted in the company's working hours rather than in wall-clock hours. An enquiry that arrives
-/// at 23:00 on a Saturday is not nine hours late by Sunday morning; it is due nine working hours
-/// after the office next opens. A deadline that is already breached before anyone could have read
-/// the message teaches people to ignore the deadline.
+/// Both are counted in the company's working hours rather than in wall-clock hours. An enquiry that
+/// arrives at 23:00 on a Saturday is not nine hours late by Sunday morning; it is due nine working
+/// hours after the office next opens, and answering it at 10:00 on Monday took one working hour,
+/// not thirty-four. A deadline that is already breached before anyone could have read the message
+/// teaches people to ignore the deadline, and a duration nobody believes is one nobody acts on
+/// (BR-LEAD-10).
 /// </summary>
 public sealed class BusinessHoursSlaCalculator(
     ISystemSettings settings,
-    IEditorTimeZone timeZone) : ISlaCalculator
+    IEditorTimeZone timeZone,
+    IHolidayCalendar holidays) : ISlaCalculator
 {
     private const int DefaultResponseHours = 9;
+
+    /// <summary>
+    /// A fortnight of days is examined at most. A company closed for longer has a bigger problem
+    /// than an SLA, and an unbounded loop is not the way to discover it.
+    /// </summary>
+    private const int MaximumDaysExamined = 14;
+
     private static readonly TimeSpan DefaultStart = new(9, 0, 0);
     private static readonly TimeSpan DefaultEnd = new(18, 0, 0);
 
     private readonly ISystemSettings _settings = settings;
     private readonly IEditorTimeZone _timeZone = timeZone;
+    private readonly IHolidayCalendar _holidays = holidays;
 
     public DateTime FirstResponseDueUtc(DateTime receivedUtc)
     {
-        var start = ParseTime(_settings.Value("sla.businessHoursStart"), DefaultStart);
-        var end = ParseTime(_settings.Value("sla.businessHoursEnd"), DefaultEnd);
-        var workingDays = ParseDays(_settings.Value("sla.workingDays"));
-        var hoursOwed = ParseHours(_settings.Value("sla.firstResponseHours"), DefaultResponseHours);
+        var hours = Hours();
+        var owed = TimeSpan.FromHours(ParseHours(_settings.Value("sla.firstResponseHours"), DefaultResponseHours));
 
         // A working day that is not positive would loop forever below, and a setting nobody checked
         // is exactly how that happens.
-        if (end <= start || workingDays.Count == 0)
+        if (!hours.IsUsable)
         {
-            return receivedUtc.AddHours(hoursOwed);
+            return receivedUtc.Add(owed);
         }
 
-        var local = _timeZone.ToEditorLocal(receivedUtc);
-        var remaining = TimeSpan.FromHours(hoursOwed);
-        var cursor = local;
+        var cursor = _timeZone.ToEditorLocal(receivedUtc);
+        var remaining = owed;
 
-        // At most a fortnight of days is examined. A company closed for longer than that has a
-        // bigger problem than an SLA, and an unbounded loop is not a way to find out.
-        for (var guard = 0; guard < 14 && remaining > TimeSpan.Zero; guard++)
+        for (var guard = 0; guard < MaximumDaysExamined && remaining > TimeSpan.Zero; guard++)
         {
-            if (!workingDays.Contains(cursor.DayOfWeek))
+            if (!IsWorkingDay(cursor, hours))
             {
-                cursor = cursor.Date.AddDays(1).Add(start);
+                cursor = NextMorning(cursor, hours);
                 continue;
             }
 
-            var dayOpens = cursor.Date.Add(start);
-            var dayCloses = cursor.Date.Add(end);
+            var opens = cursor.Date.Add(hours.Start);
+            var closes = cursor.Date.Add(hours.End);
 
-            if (cursor < dayOpens)
+            if (cursor < opens)
             {
-                cursor = dayOpens;
+                cursor = opens;
             }
 
-            if (cursor >= dayCloses)
+            if (cursor >= closes)
             {
-                cursor = cursor.Date.AddDays(1).Add(start);
+                cursor = NextMorning(cursor, hours);
                 continue;
             }
 
-            var availableToday = dayCloses - cursor;
+            var availableToday = closes - cursor;
 
             if (availableToday >= remaining)
             {
@@ -73,11 +79,65 @@ public sealed class BusinessHoursSlaCalculator(
             }
 
             remaining -= availableToday;
-            cursor = cursor.Date.AddDays(1).Add(start);
+            cursor = NextMorning(cursor, hours);
         }
 
         return _timeZone.ToUtc(cursor);
     }
+
+    public TimeSpan BusinessTimeBetween(DateTime fromUtc, DateTime toUtc)
+    {
+        if (toUtc <= fromUtc)
+        {
+            return TimeSpan.Zero;
+        }
+
+        var hours = Hours();
+
+        if (!hours.IsUsable)
+        {
+            return toUtc - fromUtc;
+        }
+
+        var start = _timeZone.ToEditorLocal(fromUtc);
+        var end = _timeZone.ToEditorLocal(toUtc);
+        var elapsed = TimeSpan.Zero;
+
+        // Day by day from the first to the last, adding the part of each working day that falls
+        // between the two instants. Summing whole days and adjusting the ends is shorter and gets
+        // the holiday and half-open-day cases wrong.
+        for (var day = start.Date; day <= end.Date; day = day.AddDays(1))
+        {
+            if (!IsWorkingDay(day, hours))
+            {
+                continue;
+            }
+
+            var opens = day.Add(hours.Start);
+            var closes = day.Add(hours.End);
+
+            var from = start > opens ? start : opens;
+            var to = end < closes ? end : closes;
+
+            if (to > from)
+            {
+                elapsed += to - from;
+            }
+        }
+
+        return elapsed;
+    }
+
+    private bool IsWorkingDay(DateTime local, BusinessHours hours) =>
+        hours.Days.Contains(local.DayOfWeek) && !_holidays.IsHoliday(DateOnly.FromDateTime(local));
+
+    private static DateTime NextMorning(DateTime cursor, BusinessHours hours) =>
+        cursor.Date.AddDays(1).Add(hours.Start);
+
+    private BusinessHours Hours() => new(
+        ParseTime(_settings.Value("sla.businessHoursStart"), DefaultStart),
+        ParseTime(_settings.Value("sla.businessHoursEnd"), DefaultEnd),
+        ParseDays(_settings.Value("sla.workingDays")));
 
     private static TimeSpan ParseTime(string? value, TimeSpan fallback) =>
         TimeSpan.TryParseExact(value, @"hh\:mm", CultureInfo.InvariantCulture, out var parsed) ? parsed : fallback;
@@ -105,5 +165,10 @@ public sealed class BusinessHoursSlaCalculator(
         }
 
         return days;
+    }
+
+    private sealed record BusinessHours(TimeSpan Start, TimeSpan End, HashSet<DayOfWeek> Days)
+    {
+        public bool IsUsable => End > Start && Days.Count > 0;
     }
 }

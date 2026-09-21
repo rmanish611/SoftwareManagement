@@ -149,6 +149,48 @@ public sealed partial class DatabaseSeeder
             });
         }
 
+        if (!existing.Contains(EmailTemplate.LeadFollowUpDue, StringComparer.Ordinal))
+        {
+            templates.Add(new EmailTemplate
+            {
+                Id = Guid.NewGuid(),
+                Key = EmailTemplate.LeadFollowUpDue,
+                Subject = "Follow up with {{fullName}} today",
+                TextBody =
+                    "You asked to be reminded about {{fullName}}.\n\n" +
+                    "{{note}}\n\n" +
+                    "Contact: {{contact}}\n" +
+                    "The enquiry came in on {{createdAt}}.",
+                HtmlBody =
+                    "<p>You asked to be reminded about <strong>{{fullName}}</strong>.</p>" +
+                    "<blockquote>{{note}}</blockquote>" +
+                    "<p>Contact: {{contact}}<br>The enquiry came in on {{createdAt}}.</p>",
+                PlaceholdersJson = """["fullName","note","contact","createdAt"]""",
+                CreatedBy = "seed",
+            });
+        }
+
+        if (!existing.Contains(EmailTemplate.LeadGoneCold, StringComparer.Ordinal))
+        {
+            templates.Add(new EmailTemplate
+            {
+                Id = Guid.NewGuid(),
+                Key = EmailTemplate.LeadGoneCold,
+                Subject = "{{fullName}} has heard nothing for {{days}} days",
+                TextBody =
+                    "{{fullName}} was contacted and then nothing happened for {{days}} days.\n\n" +
+                    "Contact: {{contact}}\n" +
+                    "The enquiry came in on {{createdAt}}.\n\n" +
+                    "Either pick it back up or disqualify it, so the funnel says something true.",
+                HtmlBody =
+                    "<p><strong>{{fullName}}</strong> was contacted and then nothing happened for {{days}} days.</p>" +
+                    "<p>Contact: {{contact}}<br>The enquiry came in on {{createdAt}}.</p>" +
+                    "<p>Either pick it back up or disqualify it, so the funnel says something true.</p>",
+                PlaceholdersJson = """["fullName","days","contact","createdAt"]""",
+                CreatedBy = "seed",
+            });
+        }
+
         if (templates.Count > 0)
         {
             _dbContext.EmailTemplates.AddRange(templates);

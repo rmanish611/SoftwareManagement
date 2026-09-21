@@ -29,6 +29,14 @@ public sealed class LeadConfiguration : IEntityTypeConfiguration<Lead>
 
         builder.HasIndex(l => l.Email);
 
+        // The SLA sweep asks one question - what is overdue and still unanswered - and this is the
+        // only index that keeps it off a table scan as the lead table grows (NFR-PERF-05).
+        builder.HasIndex(l => l.SlaDueAtUtc)
+            .HasFilter("[FirstResponseAtUtc] IS NULL")
+            .HasDatabaseName("IX_Leads_SlaDue");
+
+        builder.HasIndex(l => new { l.OwnerUserId, l.Stage }).HasDatabaseName("IX_Leads_Owner_Stage");
+
         // A lead nobody can reply to is not a lead. The database refuses one rather than trusting
         // every future write path to remember (BR-LEAD-01).
         builder.ToTable(t => t.HasCheckConstraint(
@@ -37,6 +45,16 @@ public sealed class LeadConfiguration : IEntityTypeConfiguration<Lead>
 
         builder.HasOne(l => l.Product).WithMany().HasForeignKey(l => l.ProductId).OnDelete(DeleteBehavior.SetNull);
         builder.HasMany(l => l.Submissions).WithOne(s => s.Lead!).HasForeignKey(s => s.LeadId).OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(l => l.Organisation).WithMany().HasForeignKey(l => l.OrganisationId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne(l => l.Contact).WithMany().HasForeignKey(l => l.ContactId).OnDelete(DeleteBehavior.SetNull);
+
+        // The survivor of a merge, pointed at by the record that was merged away (BR-LEAD-08).
+        // Restrict rather than cascade: deleting a lead must never silently take the conversation
+        // that was folded into it.
+        builder.HasOne<Lead>().WithMany().HasForeignKey(l => l.MergedIntoLeadId).OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(l => l.Activities).WithOne(a => a.Lead!).HasForeignKey(a => a.LeadId).OnDelete(DeleteBehavior.Cascade);
 
         // Soft-deleted leads disappear from every query without every query remembering to say so.
         builder.HasQueryFilter(l => !l.IsDeleted);

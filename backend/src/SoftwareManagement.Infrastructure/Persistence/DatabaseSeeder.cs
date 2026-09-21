@@ -56,6 +56,7 @@ public sealed partial class DatabaseSeeder(
         await SeedProductCategoriesAsync(cancellationToken).ConfigureAwait(false);
         await SeedEmailTemplatesAsync(cancellationToken).ConfigureAwait(false);
         await SeedFormsAsync(cancellationToken).ConfigureAwait(false);
+        await SeedHolidaysAsync(cancellationToken).ConfigureAwait(false);
         await SeedOwnerAsync().ConfigureAwait(false);
     }
 

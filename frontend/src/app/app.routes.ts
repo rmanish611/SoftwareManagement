@@ -77,6 +77,16 @@ export const routes: Routes = [
         loadComponent: () => import('./admin/products/product-editor').then((m) => m.ProductEditor),
         title: 'Product',
       },
+      {
+        path: 'leads',
+        loadComponent: () => import('./admin/leads/lead-inbox').then((m) => m.LeadInbox),
+        title: 'Enquiries',
+      },
+      {
+        path: 'leads/:id',
+        loadComponent: () => import('./admin/leads/lead-detail').then((m) => m.LeadDetail),
+        title: 'Enquiry',
+      },
     ],
   },
   { path: '**', redirectTo: '' },

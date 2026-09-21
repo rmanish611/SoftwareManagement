@@ -25,5 +25,11 @@ public sealed class ApiFactory : ConfiguredApiFactory
             ["Jwt__Key"] = TestSigningKey,
             ["Jwt__Issuer"] = TestIssuer,
             ["Jwt__Audience"] = TestAudience,
+
+            // A schema is not a feature. Without this the fixture ran against whatever this
+            // machine's test database happened to contain, so every new migration left it a phase
+            // behind until somebody updated it by hand - and the symptom was "Invalid object name"
+            // raised by the seeder inside tests that have nothing to do with the new table.
+            ["Database__MigrateOnStartup"] = "true",
         };
 }

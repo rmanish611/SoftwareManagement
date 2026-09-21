@@ -317,3 +317,57 @@ form key with the email, the phone and the message, so the six-submission flood 
 repeated six times: each was answered with the original reference and none ever reached the rate
 limiter. The product was right and the probe was wrong. The bodies vary properly now and the reason
 is written into the script, so the next person does not lose the same twenty minutes to it.
+
+## P08 - Lead pipeline - DONE (2026-09-21)
+
+An enquiry now has a life after it arrives. The inbox puts the one nobody has answered at the top
+with how long is left on it; the stage machine refuses a disqualification without a reason and a
+skipped stage without an explanation; every note, call and email is appended and cannot be edited or
+deleted afterwards; the response clock counts working hours rather than hours on the wall, holidays
+included; a follow-up reminder and a month of silence each queue exactly one email; duplicates are
+suggested and never merged on their own; merging keeps the earlier record by rule; and a lead
+converts into a customer company and a person. 235 backend and 110 frontend tests pass, coverage
+80.2%.
+
+### Two entities a phase early, on purpose
+
+Converting a qualified lead has to put the customer somewhere, and `Organisation` and `Contact` are
+listed against P09. Inventing a holding table here would have meant undoing it there, so both are
+built now with the fields conversion needs and nothing more. P09 adds the GSTIN rules, the status
+lifecycle and the screens (ASM-17).
+
+### The schema SQL Server refused, and why the refusal was right
+
+The first migration would not apply: a lead points at both the company and the person, and the
+person cascaded from the company, so deleting one organisation reached the same `Leads` row by two
+paths. Cascade was wrong on its own terms - an organisation is retired by a flag and never removed,
+so the cascade could only ever fire for a hard delete nothing performs. It is `Restrict` now.
+
+### The SLA is measured, not stored
+
+The lead screen and the response-time report both call the same calculator rather than reading a
+number somebody wrote down, so they cannot disagree. 23:55 on a Saturday answered at 10:00 on the
+Monday is one working hour; a second test asserts that more than thirty-four hours passed on the
+wall, so the first cannot pass by measuring nothing.
+
+### Smart App Control took another step
+
+It now refuses the freshly built Debug `SoftwareManagement.Api.exe`, not only the Release assembly,
+so `dotnet run` could not start the API for the smoke at all. Handing the DLL to the signed `dotnet`
+host sidesteps the generated apphost entirely - which is why the integration tests were loading the
+same build without trouble all along (ASM-18). BLK-1 stays open; D5 and D6 stay unevidenced.
+
+### A test fixture that had been drifting for four phases
+
+`ApiFactory` never set `Database__MigrateOnStartup`, so the skeleton tests ran against whatever this
+machine's test database happened to contain. Every new migration left it a phase behind until
+somebody updated it by hand, and the symptom was "Invalid object name 'Holidays'" raised by the
+seeder inside tests that have nothing to do with holidays. It migrates now, like every other fixture.
+
+### The admin screens are not server-rendered, and that is the point
+
+`/admin/leads` returns 2 kB where a public page returns 15-19 kB: the server renders none of it. A
+screen showing other people's names, telephone numbers and messages should not put them in HTML
+served before anyone has signed in. A signed-in browser pass was not done - it needs a password
+typed into a form - so what covers these screens is seventeen component tests and an axe pass on
+each.

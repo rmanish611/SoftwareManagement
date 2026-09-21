@@ -5,6 +5,7 @@ using SoftwareManagement.Domain.Audit;
 using SoftwareManagement.Domain.Catalog;
 using SoftwareManagement.Domain.Common;
 using SoftwareManagement.Domain.Content;
+using SoftwareManagement.Domain.Crm;
 using SoftwareManagement.Domain.Identity;
 using SoftwareManagement.Domain.Leads;
 using SoftwareManagement.Domain.Notifications;
@@ -93,6 +94,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IClock clock)
     public DbSet<EmailDeliveryLog> EmailDeliveryLogs => Set<EmailDeliveryLog>();
 
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
+
+    public DbSet<LeadActivity> LeadActivities => Set<LeadActivity>();
+
+    public DbSet<Holiday> Holidays => Set<Holiday>();
+
+    public DbSet<Organisation> Organisations => Set<Organisation>();
+
+    public DbSet<Contact> Contacts => Set<Contact>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

@@ -1,5 +1,6 @@
 using SoftwareManagement.Domain.Catalog;
 using SoftwareManagement.Domain.Common;
+using SoftwareManagement.Domain.Crm;
 
 namespace SoftwareManagement.Domain.Leads;
 
@@ -54,9 +55,37 @@ public class Lead : AuditableEntity
 
     public Guid? MergedIntoLeadId { get; set; }
 
+    /// <summary>
+    /// The customer record this lead became, set by converting it (REQ-LEAD-015). Both are null
+    /// until then, and a converted lead has both: a company with nobody to ring is not a customer.
+    /// </summary>
+    public Guid? OrganisationId { get; set; }
+
+    public Organisation? Organisation { get; set; }
+
+    public Guid? ContactId { get; set; }
+
+    public Contact? Contact { get; set; }
+
+    /// <summary>
+    /// When the last reminder about this lead going cold was queued, so the 30-day nudge is sent
+    /// once rather than every time the sweep runs (BR-LEAD-11).
+    /// </summary>
+    public DateTime? StaleReminderSentAtUtc { get; set; }
+
     public bool IsDeleted { get; set; }
 
     public ICollection<FormSubmission> Submissions { get; } = [];
+
+    public ICollection<LeadActivity> Activities { get; } = [];
+
+    /// <summary>
+    /// Whether this lead belongs in the funnel at all. Spam is excluded permanently (BR-LEAD-12)
+    /// and a merged record is counted under its survivor (BR-LEAD-08); counting either would
+    /// inflate the denominator of every conversion figure the owner looks at.
+    /// </summary>
+    public bool CountsTowardsReporting() =>
+        !IsDeleted && Stage != LeadStage.Spam && Stage != LeadStage.Merged;
 }
 
 public enum LeadStage

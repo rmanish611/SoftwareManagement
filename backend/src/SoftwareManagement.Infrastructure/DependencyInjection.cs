@@ -93,8 +93,12 @@ public static class DependencyInjection
         services.AddMemoryCache();
         services.AddHttpClient<ICaptchaVerifier, TurnstileVerifier>();
         services.AddScoped<ISubmissionRateLimiter, SubmissionRateLimiter>();
+        services.AddScoped<IHolidayCalendar, HolidayCalendar>();
         services.AddScoped<ISlaCalculator, BusinessHoursSlaCalculator>();
         services.AddScoped<ILeadIntakeService, LeadIntakeService>();
+        services.AddScoped<ILeadPipelineService, LeadPipelineService>();
+        services.AddScoped<ILeadSweep, LeadSweep>();
+        services.AddHostedService<LeadSweepService>();
         services.AddSingleton<IEmailComposer, EmailComposer>();
         services.AddScoped<IEmailOutbox, OutboxWriter>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();

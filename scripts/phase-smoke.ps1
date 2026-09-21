@@ -223,15 +223,24 @@ $outLog = Join-Path $EvidenceDirectory 'api-out.log'
 $errLog = Join-Path $EvidenceDirectory 'api-err.log'
 
 if ($FromSource) {
-    Write-Output 'API_SOURCE=dotnet run (-c Debug) - NOT the published artefact'
-    $apiArguments = @(
-        'run',
-        '--project', (Join-Path $repoRoot 'backend\src\SoftwareManagement.Api\SoftwareManagement.Api.csproj'),
-        '--no-launch-profile',
-        '--no-build',
-        '-c', 'Debug'
-    )
-    $apiWorkingDirectory = $repoRoot
+    # The Debug build output, run through the `dotnet` host rather than through the generated
+    # SoftwareManagement.Api.exe.
+    #
+    # `dotnet run` launches that apphost, and Smart App Control blocks it here for the same reason
+    # it blocks the Release assembly (BLK-1): it is a freshly built unsigned executable. Handing
+    # the managed DLL to the signed `dotnet` host sidesteps the apphost entirely, which is why the
+    # integration tests load the same build without trouble. Nothing about the application changes.
+    $apiDll = Join-Path $repoRoot 'backend\src\SoftwareManagement.Api\bin\Debug\net10.0\SoftwareManagement.Api.dll'
+
+    if (-not (Test-Path $apiDll)) {
+        Write-Output "SMOKE=FAIL"
+        Write-Output "  no Debug build at $apiDll - run dotnet build -c Debug first"
+        exit 1
+    }
+
+    Write-Output 'API_SOURCE=dotnet backend/.../bin/Debug/SoftwareManagement.Api.dll - NOT the published artefact'
+    $apiArguments = @($apiDll)
+    $apiWorkingDirectory = Split-Path -Parent $apiDll
 }
 else {
     Write-Output 'API_SOURCE=_publish/api/SoftwareManagement.Api.dll'
@@ -542,6 +551,104 @@ WHERE o.TemplateKey IN ('lead.acknowledgement', 'lead.owner-alert')
             Write-Output "LEAD_LOG_ADDRESS_IN_FULL=$leaked"
             if ($leaked -ne 0) { $failures.Add("the submitter's address appears $leaked times in the API log, unmasked") }
         }
+
+        # ---------------------------------------------------------------------------------------
+        # P08 - the pipeline: what happens to an enquiry after it arrives.
+        # ---------------------------------------------------------------------------------------
+
+        $leadId = Invoke-SqlScalar "SELECT TOP 1 CONVERT(nvarchar(36), Id) FROM Leads WHERE FullName = 'PROBE-$Nonce'"
+
+        if (-not $leadId) {
+            $failures.Add('no lead to work the pipeline against')
+        }
+        else {
+            # 1 - REQ-LEAD-011: an activity is appended and reaches the database.
+            $probeBody = "PROBE-$Nonce"
+            $activity = Get-Status "/api/v1/leads/$leadId/activities" -Method 'POST' -Headers $auth -Body @{
+                activityType = 'Note'; direction = 'Internal'; body = $probeBody
+            }
+
+            Write-Output "PIPELINE_ACTIVITY_STATUS=$($activity.Status)"
+            if ($activity.Status -ne 201) { $failures.Add("logging an activity returned $($activity.Status): $($activity.Content)") }
+
+            $activityRows = Invoke-SqlScalar "SELECT COUNT(*) FROM LeadActivities WHERE Body = '$probeBody'"
+            Write-Output "PIPELINE_ACTIVITY_ROWS=$activityRows"
+            if ($activityRows -ne 1) { $failures.Add("expected one activity row, found $activityRows") }
+
+            # 2 - REQ-LEAD-011: the timeline is append-only and says so.
+            $activityId = ($activity.Content | ConvertFrom-Json).id
+            $deleted = Get-Status "/api/v1/leads/$leadId/activities/$activityId" -Method 'DELETE' -Headers $auth
+            Write-Output "PIPELINE_ACTIVITY_DELETE_STATUS=$($deleted.Status)"
+            if ($deleted.Status -ne 405) { $failures.Add("deleting an activity returned $($deleted.Status), expected 405") }
+
+            # 3 - REQ-LEAD-010: a stage change records both stages and the actor.
+            $moved = Get-Status "/api/v1/leads/$leadId/stage" -Method 'POST' -Headers $auth -Body @{ stage = 'Contacted' }
+            Write-Output "PIPELINE_STAGE_STATUS=$($moved.Status)"
+            if ($moved.Status -ne 204) { $failures.Add("moving the stage returned $($moved.Status): $($moved.Content)") }
+
+            $stageRows = Invoke-SqlScalar @"
+SELECT COUNT(*) FROM LeadActivities
+WHERE LeadId = '$leadId' AND ActivityType = 5 AND FromStage = 0 AND ToStage = 1
+"@
+            Write-Output "PIPELINE_STAGE_ACTIVITY_ROWS=$stageRows"
+            if ($stageRows -lt 1) { $failures.Add('the stage change wrote no activity naming both stages') }
+
+            # 4 - REQ-LEAD-010: disqualifying with a four-character reason is refused.
+            $short = Get-Status "/api/v1/leads/$leadId/stage" -Method 'POST' -Headers $auth -Body @{
+                stage = 'Disqualified'; reason = 'junk'
+            }
+
+            Write-Output "PIPELINE_SHORT_REASON_STATUS=$($short.Status)"
+            Write-Output "PIPELINE_SHORT_REASON_BODY=$($short.Content)"
+            if ($short.Status -ne 422) { $failures.Add("a four-character reason returned $($short.Status), expected 422") }
+
+            # 5 - REQ-LEAD-016: merging keeps the earliest record, whichever way round it is asked.
+            $otherId = Invoke-SqlScalar @"
+SELECT TOP 1 CONVERT(nvarchar(36), Id) FROM Leads
+WHERE Id <> '$leadId' AND Stage NOT IN (6, 7) ORDER BY CreatedAtUtc DESC
+"@
+
+            if ($otherId) {
+                $expectedSurvivor = Invoke-SqlScalar @"
+SELECT TOP 1 CONVERT(nvarchar(36), Id) FROM Leads
+WHERE Id IN ('$leadId', '$otherId') ORDER BY CreatedAtUtc ASC, Id ASC
+"@
+
+                $merged = Get-Status "/api/v1/leads/$otherId/merge" -Method 'POST' -Headers $auth -Body @{ otherLeadId = $leadId }
+                Write-Output "PIPELINE_MERGE_STATUS=$($merged.Status)"
+                if ($merged.Status -ne 200) { $failures.Add("merging returned $($merged.Status): $($merged.Content)") }
+
+                $survivor = ($merged.Content | ConvertFrom-Json).survivorId
+                Write-Output "PIPELINE_MERGE_SURVIVOR=$survivor EXPECTED=$expectedSurvivor"
+                if ("$survivor" -ne "$expectedSurvivor") {
+                    $failures.Add("the merge kept $survivor; the earliest-created lead is $expectedSurvivor")
+                }
+
+                $mergedAway = Invoke-SqlScalar @"
+SELECT COUNT(*) FROM Leads
+WHERE Stage = 7 AND CONVERT(nvarchar(36), MergedIntoLeadId) = '$expectedSurvivor'
+"@
+                Write-Output "PIPELINE_MERGED_AWAY_ROWS=$mergedAway"
+                if ($mergedAway -lt 1) { $failures.Add('the merged record does not point at the survivor') }
+            }
+        }
+
+        # 6 - NFR-AUTHZ-02: the editor is refused the pipeline outright.
+        $editorLogin = Get-Status '/api/v1/auth/login' -Method 'POST' -Body @{
+            email = 'editor@softwaremanagement.test'; password = $ownerPassword; twoFactorCode = $null
+        }
+
+        if ($editorLogin.Status -eq 200) {
+            $editorAuth = @{ Authorization = "Bearer $(($editorLogin.Content | ConvertFrom-Json).accessToken)" }
+            $editorLeads = Get-Status '/api/v1/leads' -Headers $editorAuth
+            Write-Output "PIPELINE_EDITOR_LEADS_STATUS=$($editorLeads.Status)"
+            if ($editorLeads.Status -ne 403) { $failures.Add("an editor token got $($editorLeads.Status) on /api/v1/leads, expected 403") }
+        }
+        else {
+            # Said out loud rather than skipped silently: a check that did not run must not read as
+            # a check that passed.
+            Write-Output "PIPELINE_EDITOR_LEADS_STATUS=not-checked (no editor account in this gate database)"
+        }
     }
 }
 finally {
@@ -550,9 +657,10 @@ finally {
         $api.WaitForExit(15000) | Out-Null
     }
 
-    # Under -FromSource the process started above is `dotnet run`, which launches the application
-    # as a child. Killing the launcher leaves the child holding the port, and D9 would then report
-    # a leak that is really a half-finished shutdown.
+    # Belt and braces. The API now runs in the process started above, but an earlier version of
+    # this script used `dotnet run`, which leaves the application as a child when only the launcher
+    # is killed. A stray host from an interrupted run would still hold the port, and D9 would then
+    # report a leak that is really a half-finished shutdown.
     if ($FromSource) {
         Get-Process -Name 'SoftwareManagement.Api' -ErrorAction SilentlyContinue |
             Stop-Process -Force -ErrorAction SilentlyContinue

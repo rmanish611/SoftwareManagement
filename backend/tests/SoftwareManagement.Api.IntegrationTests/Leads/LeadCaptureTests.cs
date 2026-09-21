@@ -423,7 +423,7 @@ public sealed class LeadCaptureTests(LeadFixture fixture)
         (await editor.GetAsync("/api/v1/leads")).StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
         var sales = await _fixture.ClientAsAsync(LeadFixture.SalesEmail);
-        var visible = await sales.GetFromJsonAsync<List<LeadArrange.LeadRow>>("/api/v1/leads");
+        var visible = await sales.GetFromJsonAsync<List<LeadArrange.LeadRow>>($"/api/v1/leads?search={nonce}");
         visible!.Should().Contain(l => l.FullName == $"PROBE-{nonce}");
     }
 }

@@ -42,8 +42,8 @@ public sealed partial class DatabaseSeeder(
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
         // Two instances starting together must not both insert the same role or the same owner.
-        await using var seedLock = new SeedLock(_dbContext, _logger);
-        if (!await seedLock.AcquireAsync(TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false))
+        await using var seedLock = new DatabaseLock(_dbContext, _logger);
+        if (!await seedLock.AcquireAsync(DatabaseLock.Seeding, TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false))
         {
             LogSeedLockNotTaken(_logger);
             return;

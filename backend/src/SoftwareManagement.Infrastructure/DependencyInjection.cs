@@ -104,6 +104,8 @@ public static class DependencyInjection
 
         services.AddScoped<INumberAllocator, NumberAllocator>();
         services.AddScoped<IQuoteService, QuoteService>();
+        services.AddScoped<IBillingService, BillingService>();
+        services.AddHostedService<BillingSweepService>();
         services.AddSingleton<IEmailComposer, EmailComposer>();
         services.AddScoped<IEmailOutbox, OutboxWriter>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();

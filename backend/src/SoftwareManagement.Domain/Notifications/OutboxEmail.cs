@@ -108,6 +108,8 @@ public class EmailTemplate : AuditableEntity
     public const string OutboxDeadLettered = "outbox.dead-lettered";
     public const string LeadFollowUpDue = "lead.follow-up-due";
     public const string LeadGoneCold = "lead.gone-cold";
+    public const string InvoiceOverdue = "invoice.overdue";
+    public const string SubscriptionRenewing = "subscription.renewing";
 
     public string Key { get; set; } = string.Empty;
 

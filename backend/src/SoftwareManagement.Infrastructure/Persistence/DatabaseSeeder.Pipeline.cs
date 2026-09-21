@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SoftwareManagement.Domain.Content;
+using SoftwareManagement.Domain.Notifications;
 
 namespace SoftwareManagement.Infrastructure.Persistence;
 
@@ -56,6 +57,64 @@ public sealed partial class DatabaseSeeder
         if (holidays.Count > 0)
         {
             _dbContext.Holidays.AddRange(holidays);
+            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        await SeedBillingTemplatesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The two messages the billing sweep sends. Seeded like the rest so the owner can reword them
+    /// without a deployment (REQ-NOTIF-006).
+    /// </summary>
+    private async Task SeedBillingTemplatesAsync(CancellationToken cancellationToken)
+    {
+        var existing = await _dbContext.EmailTemplates
+            .AsNoTracking()
+            .Select(t => t.Key)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        var templates = new List<EmailTemplate>();
+
+        if (!existing.Contains(EmailTemplate.InvoiceOverdue, StringComparer.Ordinal))
+        {
+            templates.Add(new EmailTemplate
+            {
+                Id = Guid.NewGuid(),
+                Key = EmailTemplate.InvoiceOverdue,
+                Subject = "Invoice {{invoiceNumber}} is {{days}} days late",
+                TextBody =
+                    "Invoice {{invoiceNumber}} is {{days}} days past its due date with {{amount}} outstanding.\n\n" +
+                    "The subscription is now {{status}}.",
+                HtmlBody =
+                    "<p>Invoice <strong>{{invoiceNumber}}</strong> is {{days}} days past its due date with " +
+                    "{{amount}} outstanding.</p><p>The subscription is now {{status}}.</p>",
+                PlaceholdersJson = """["invoiceNumber","days","amount","status"]""",
+                CreatedBy = "seed",
+            });
+        }
+
+        if (!existing.Contains(EmailTemplate.SubscriptionRenewing, StringComparer.Ordinal))
+        {
+            templates.Add(new EmailTemplate
+            {
+                Id = Guid.NewGuid(),
+                Key = EmailTemplate.SubscriptionRenewing,
+                Subject = "{{tenant}} renews on {{renewsOn}}",
+                TextBody =
+                    "{{tenant}} renews on {{renewsOn}} for {{amount}}.\n\n" +
+                    "The invoice has been raised. Nobody should be surprised by this.",
+                HtmlBody =
+                    "<p><strong>{{tenant}}</strong> renews on {{renewsOn}} for {{amount}}.</p>" +
+                    "<p>The invoice has been raised. Nobody should be surprised by this.</p>",
+                PlaceholdersJson = """["tenant","renewsOn","amount"]""",
+                CreatedBy = "seed",
+            });
+        }
+
+        if (templates.Count > 0)
+        {
+            _dbContext.EmailTemplates.AddRange(templates);
             await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }

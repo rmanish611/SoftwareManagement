@@ -99,6 +99,8 @@ export class AdminShell {
     { path: '/admin/leads', label: 'Enquiries', permission: 'lead.read' },
     { path: '/admin/customers', label: 'Customers', permission: 'crm.org.read' },
     { path: '/admin/quotes', label: 'Quotes', permission: 'sales.quote.read' },
+    { path: '/admin/subscriptions', label: 'Subscriptions', permission: 'sales.subscription.read' },
+    { path: '/admin/invoices', label: 'Invoices', permission: 'finance.invoice.read' },
     { path: '/admin/users', label: 'Users', permission: 'admin.user.read' },
     { path: '/admin/login-attempts', label: 'Sign-in log', permission: 'admin.audit.read' },
   ];

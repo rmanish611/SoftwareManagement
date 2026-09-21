@@ -736,6 +736,114 @@ WHERE Stage = 7 AND CONVERT(nvarchar(36), MergedIntoLeadId) = '$expectedSurvivor
         # asserted by REQ_SALE_004_A_sales_user_applying_a_twenty_percent_discount_is_refused...
         Write-Output 'QUOTE_DISCOUNT_403_STATUS=not-checked (no Sales account in this gate database)'
 
+        # ---------------------------------------------------------------------------------------
+        # P10 - tenants, subscriptions, invoices and payments.
+        # ---------------------------------------------------------------------------------------
+
+        # A second quote to accept, since the first was sent and then left alone above.
+        $billingQuote = Get-Status '/api/v1/quotes' -Method 'POST' -Headers $auth -Body @{
+            organisationId = $orgId; contactId = $contactId
+        }
+
+        $billingQuoteId = ($billingQuote.Content | ConvertFrom-Json).id
+
+        Get-Status "/api/v1/quotes/$billingQuoteId/lines" -Method 'POST' -Headers $auth -Body @{
+            productId = $productId; description = 'Subscription, one period'; quantity = 2
+            unitPrice = 3000.00; discountAmount = 0; taxRatePercent = 18.00
+        } | Out-Null
+
+        Get-Status "/api/v1/quotes/$billingQuoteId/send" -Method 'POST' -Headers $auth -Body @{} | Out-Null
+
+        $accepted = Get-Status "/api/v1/quotes/$billingQuoteId/accept" -Method 'POST' -Headers $auth
+        Write-Output "QUOTE_ACCEPT_STATUS=$($accepted.Status)"
+        if ($accepted.Status -ne 204) { $failures.Add("accepting the quote returned $($accepted.Status)") }
+
+        # 1 - REQ-SALE-008: a tenant reaches the database.
+        $probeTenant = "PROBE-$Nonce"
+        $provisioned = Get-Status "/api/v1/subscriptions/from-quote/$billingQuoteId" -Method 'POST' -Headers $auth -Body @{
+            name = $probeTenant; environmentUrl = "https://$Nonce.example.test"; environment = 'Production'
+        }
+
+        Write-Output "TENANT_CREATE_STATUS=$($provisioned.Status)"
+        if ($provisioned.Status -ne 201) { $failures.Add("provisioning returned $($provisioned.Status): $($provisioned.Content)") }
+
+        $tenantRows = Invoke-SqlScalar "SELECT COUNT(*) FROM Tenants WHERE Name = '$probeTenant'"
+        Write-Output "TENANT_ROWS=$tenantRows"
+        if ($tenantRows -ne 1) { $failures.Add("expected one tenant row, found $tenantRows") }
+
+        $subscriptionId = ($provisioned.Content | ConvertFrom-Json).id
+
+        # 2 - REQ-SALE-007: provisioning the same quote twice yields the same subscription.
+        $again = Get-Status "/api/v1/subscriptions/from-quote/$billingQuoteId" -Method 'POST' -Headers $auth -Body @{
+            name = $probeTenant; environment = 'Production'
+        }
+
+        $againId = ($again.Content | ConvertFrom-Json).id
+        Write-Output "TENANT_SECOND_PROVISION_STATUS=$($again.Status) SAME_SUBSCRIPTION=$("$againId" -eq "$subscriptionId")"
+        if ("$againId" -ne "$subscriptionId") { $failures.Add('provisioning twice produced two subscriptions') }
+
+        $subscriptionRows = Invoke-SqlScalar "SELECT COUNT(*) FROM Subscriptions WHERE CONVERT(nvarchar(36), QuoteId) = '$billingQuoteId'"
+        Write-Output "SUBSCRIPTION_ROWS=$subscriptionRows"
+        if ($subscriptionRows -ne 1) { $failures.Add("expected one subscription for the quote, found $subscriptionRows") }
+
+        # Every status change writes an event beside it (REQ-SALE-010).
+        $eventRows = Invoke-SqlScalar "SELECT COUNT(*) FROM SubscriptionEvents WHERE CONVERT(nvarchar(36), SubscriptionId) = '$subscriptionId'"
+        Write-Output "SUBSCRIPTION_EVENT_ROWS=$eventRows"
+        if ($eventRows -lt 1) { $failures.Add('provisioning wrote no subscription event') }
+
+        # 3 - REQ-SALE-011: an invoice with a gapless financial-year number.
+        $invoice = Get-Status "/api/v1/subscriptions/$subscriptionId/invoices" -Method 'POST' -Headers $auth
+        Write-Output "INVOICE_ISSUE_STATUS=$($invoice.Status)"
+        if ($invoice.Status -ne 201) { $failures.Add("issuing an invoice returned $($invoice.Status): $($invoice.Content)") }
+
+        $invoiceBody = $invoice.Content | ConvertFrom-Json
+        $invoiceId = $invoiceBody.id
+        Write-Output "INVOICE_NUMBER=$($invoiceBody.invoiceNumber) TOTAL=$($invoiceBody.grandTotal)"
+
+        if ($invoiceBody.invoiceNumber -notmatch '^INV/\d{4}-\d{2}/\d{5}$') {
+            $failures.Add("the invoice number $($invoiceBody.invoiceNumber) is not in the INV/<FY>/<00001> format")
+        }
+
+        # 2 x 3000 = 6000, plus 18 percent = 7080 (BR-SALE-03).
+        if ([decimal]$invoiceBody.grandTotal -ne 7080.00) {
+            $failures.Add("the invoice total is $($invoiceBody.grandTotal), expected 7080.00")
+        }
+
+        # 4 - REQ-SALE-012: an overpayment is refused and names the outstanding figure.
+        $overpaid = Get-Status "/api/v1/invoices/$invoiceId/payments" -Method 'POST' -Headers $auth -Body @{
+            amount = 20000.00; mode = 'NeftRtgs'; referenceNumber = "OVER-$Nonce"
+        }
+
+        Write-Output "PAYMENT_OVERPAY_STATUS=$($overpaid.Status)"
+        Write-Output "PAYMENT_OVERPAY_BODY=$($overpaid.Content)"
+        if ($overpaid.Status -ne 422) { $failures.Add("an overpayment returned $($overpaid.Status), expected 422") }
+        if ($overpaid.Content -notlike '*OVERPAYMENT*') { $failures.Add('the overpayment refusal did not carry the code') }
+        if ($overpaid.Content -notlike '*outstanding*') { $failures.Add('the overpayment refusal did not name the outstanding amount') }
+
+        # A part payment does go through, and leaves the rest outstanding.
+        $part = Get-Status "/api/v1/invoices/$invoiceId/payments" -Method 'POST' -Headers $auth -Body @{
+            amount = 1000.00; mode = 'Upi'; referenceNumber = "UPI-$Nonce"
+        }
+
+        Write-Output "PAYMENT_PART_STATUS=$($part.Status) BODY=$($part.Content)"
+        if ($part.Status -ne 200) { $failures.Add("a part payment returned $($part.Status): $($part.Content)") }
+
+        $paidRows = Invoke-SqlScalar "SELECT CONVERT(varchar(32), AmountPaid) FROM Invoices WHERE CONVERT(nvarchar(36), Id) = '$invoiceId'"
+        Write-Output "INVOICE_AMOUNT_PAID=$paidRows"
+        if ([decimal]$paidRows -ne 1000.00) { $failures.Add("the invoice records $paidRows paid, expected 1000.00") }
+
+        # The same bank reference twice is refused rather than counted twice (EX-226).
+        $duplicatePayment = Get-Status "/api/v1/invoices/$invoiceId/payments" -Method 'POST' -Headers $auth -Body @{
+            amount = 1000.00; mode = 'Upi'; referenceNumber = "UPI-$Nonce"
+        }
+
+        Write-Output "PAYMENT_DUPLICATE_STATUS=$($duplicatePayment.Status)"
+        if ($duplicatePayment.Status -ne 409) { $failures.Add("the same reference twice returned $($duplicatePayment.Status), expected 409") }
+
+        $paymentRows = Invoke-SqlScalar "SELECT COUNT(*) FROM Payments WHERE CONVERT(nvarchar(36), InvoiceId) = '$invoiceId'"
+        Write-Output "PAYMENT_ROWS=$paymentRows"
+        if ($paymentRows -ne 1) { $failures.Add("expected one payment row, found $paymentRows") }
+
         # 6 - NFR-AUTHZ-02: the editor is refused the pipeline outright.
         $editorLogin = Get-Status '/api/v1/auth/login' -Method 'POST' -Body @{
             email = 'editor@softwaremanagement.test'; password = $ownerPassword; twoFactorCode = $null

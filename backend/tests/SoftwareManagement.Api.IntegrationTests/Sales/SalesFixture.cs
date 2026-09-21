@@ -70,6 +70,14 @@ public sealed class SalesFixture : ConfiguredApiFactory, IAsyncLifetime
     /// </summary>
     private static async Task ClearSalesDataAsync(AppDbContext db)
     {
+        // Children before parents, and money before the things it was against: a payment points at
+        // an invoice, an invoice at a subscription, a subscription at a tenant and a quote.
+        await db.Payments.ExecuteDeleteAsync();
+        await db.Invoices.ExecuteDeleteAsync();
+        await db.SubscriptionEvents.ExecuteDeleteAsync();
+        await db.Subscriptions.ExecuteDeleteAsync();
+        await db.Tenants.ExecuteDeleteAsync();
+        await db.OutboxEmails.ExecuteDeleteAsync();
         await db.QuoteLineItems.ExecuteDeleteAsync();
         await db.Quotes.ExecuteDeleteAsync();
         await db.NumberSequences.ExecuteDeleteAsync();
@@ -83,6 +91,10 @@ public sealed class SalesFixture : ConfiguredApiFactory, IAsyncLifetime
 
         if (existing is not null)
         {
+            // The plan is checked separately from the product. Returning early on the product
+            // alone meant a database from an earlier phase had the product and no plan, and every
+            // provisioning test failed with PLAN_REQUIRED on a machine that had run before.
+            await EnsurePlanAsync(db, existing.Id);
             return existing.Id;
         }
 
@@ -103,7 +115,38 @@ public sealed class SalesFixture : ConfiguredApiFactory, IAsyncLifetime
 
         db.Products.Add(product);
         await db.SaveChangesAsync();
+
+        await EnsurePlanAsync(db, product.Id);
         return product.Id;
+    }
+
+    /// <summary>
+    /// A published plan for the fixture's product. Provisioning a subscription needs one, and
+    /// reaching into the catalogue suite's data instead would make this suite depend on whether
+    /// that one had run first.
+    /// </summary>
+    private static async Task EnsurePlanAsync(AppDbContext db, Guid productId)
+    {
+        if (await db.PricingPlans.AnyAsync(p => p.ProductId == productId && p.IsPublished))
+        {
+            return;
+        }
+
+        db.PricingPlans.Add(new PricingPlan
+        {
+            Id = Guid.NewGuid(),
+            ProductId = productId,
+            Name = "Standard",
+            Price = 3000m,
+            Currency = "INR",
+            BillingPeriod = BillingPeriod.Monthly,
+            IncludedSeats = 5,
+            IsPublished = true,
+            SortOrder = 1,
+            CreatedBy = "test-fixture",
+        });
+
+        await db.SaveChangesAsync();
     }
 
     private static async Task EnsureAsync(UserManager<AdminUser> users, string email, string name, string role)

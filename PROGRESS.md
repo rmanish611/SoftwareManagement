@@ -420,3 +420,40 @@ right on its own.
 Past twenty spec files, four axe tests began timing out at Vitest's five-second default on a busy
 machine. A failing accessibility check where nothing is wrong with the markup is the worst kind of
 false alarm - the one people learn to re-run. Every axe test now carries an explicit timeout.
+
+## P10 - Tenants, subscriptions, invoices and payments - DONE (2026-09-21)
+
+An accepted quote now becomes a tenant and a subscription that bills, chases, renews and can be
+cancelled. Invoices carry a gapless `INV/<FY>/<00001>` number, payments are matched to a bank
+reference that cannot be entered twice, an overpayment is refused with the outstanding figure named,
+and a sweep nobody has to remember to run escalates unpaid invoices, expires finished trials and
+raises renewals a fortnight out. 313 backend and 148 frontend tests pass, coverage 81%.
+
+### One lock, two jobs
+
+`SeedLock` became `DatabaseLock` with a named resource. NFR-DEP-05 asks that every scheduled job
+take a database lock so a second instance cannot double-send, and a second copy of the same class
+would have drifted from the first (ASM-22).
+
+The test for it was wrong before it was right. It asserted that only one of two concurrent sweeps
+*took* the lock; they do not race that way - the second waits, gets it, and finds the work already
+done. What the requirement promises is that nothing is sent twice, so that is what is asserted now,
+with a second test that holds the lock from outside and watches the sweep decline.
+
+### No invoice lines, because the model has none
+
+REQ-SALE-011 says "tax per line", but the frozen data model has no `InvoiceLineItem` and the
+diagram draws an invoice hanging straight off a subscription. An invoice here is therefore one
+computed amount with the tax rounded the way a quote line is rounded, and "per line" is read as the
+rounding rule rather than as a table nobody specified (ASM-21).
+
+### Five tests broke, and they deserved to
+
+The whole suite failed five lead tests that passed on their own. P08 changed the inbox ordering to
+unanswered-first, and four P07 tests were reading the default page and expecting to find a lead they
+had just submitted - which, with this phase's backdated fixtures in the same database, sat below the
+twenty-five oldest unanswered. They ask for their lead by name now.
+
+The fifth was worse. `The_newest_enquiry_is_the_first_one_the_owner_sees` was still asserting the
+ordering P08 deliberately replaced, and had been passing only because nothing else in that database
+was older. It now asserts what the inbox is actually for, and says in the test why it changed.

@@ -30,7 +30,7 @@ public sealed class LeadReadingTests(LeadFixture fixture)
             .StatusCode.Should().Be(HttpStatusCode.Accepted);
 
         var owner = await _fixture.ClientAsAsync(LeadFixture.OwnerEmail);
-        var leads = await owner.GetFromJsonAsync<List<LeadArrange.LeadRow>>("/api/v1/leads");
+        var leads = await owner.GetFromJsonAsync<List<LeadArrange.LeadRow>>($"/api/v1/leads?search={nonce}");
 
         var mine = leads!.Should().ContainSingle(l => l.FullName == $"PROBE-{nonce}").Subject;
         mine.Stage.Should().Be(nameof(LeadStage.New));
@@ -39,30 +39,31 @@ public sealed class LeadReadingTests(LeadFixture fixture)
     }
 
     [Fact]
-    public async Task REQ_LEAD_001_The_newest_enquiry_is_the_first_one_the_owner_sees()
+    public async Task REQ_LEAD_001_The_enquiry_waiting_longest_is_the_first_one_the_owner_sees()
     {
-        var older = LeadArrange.Nonce();
-        var newer = LeadArrange.Nonce();
+        var nonce = LeadArrange.Nonce();
 
-        using var first = _fixture.ClientFrom(LeadArrange.Address(older));
-        (await first.PostAsJsonAsync("/api/v1/public/forms/contact/submit", LeadArrange.ContactBody(older)))
-            .StatusCode.Should().Be(HttpStatusCode.Accepted);
+        // Two enquiries from the same sender, so one search finds both. The earlier one has the
+        // earlier deadline.
+        var older = await AddLeadAsync(nonce, LeadStage.New);
+        var newer = await AddLeadAsync(nonce, LeadStage.New);
 
-        using var second = _fixture.ClientFrom(LeadArrange.Address(newer));
-        (await second.PostAsJsonAsync("/api/v1/public/forms/contact/submit", LeadArrange.ContactBody(newer)))
-            .StatusCode.Should().Be(HttpStatusCode.Accepted);
+        await BackdateAsync(older, DateTime.UtcNow.AddDays(-3));
 
         var owner = await _fixture.ClientAsAsync(LeadFixture.OwnerEmail);
-        var leads = await owner.GetFromJsonAsync<List<LeadArrange.LeadRow>>("/api/v1/leads");
+        var leads = await owner.GetFromJsonAsync<List<LeadArrange.LeadRow>>($"/api/v1/leads?search={nonce}");
 
-        // Ordering is asserted between the two this test wrote rather than on the head of the list,
-        // because the fixture's database keeps what every other test in the collection submitted.
-        var newerAt = leads!.FindIndex(l => l.FullName == $"PROBE-{newer}");
-        var olderAt = leads.FindIndex(l => l.FullName == $"PROBE-{older}");
+        var olderAt = leads!.FindIndex(l => l.Id == older);
+        var newerAt = leads.FindIndex(l => l.Id == newer);
 
-        newerAt.Should().BeGreaterThanOrEqualTo(0);
         olderAt.Should().BeGreaterThanOrEqualTo(0);
-        newerAt.Should().BeLessThan(olderAt);
+        newerAt.Should().BeGreaterThanOrEqualTo(0);
+
+        // This test asserted "newest first" when it was written in P07. P08 changed the ordering to
+        // unanswered-first, oldest deadline before newest, because the enquiry the company is
+        // currently failing is the one that belongs at the top - and the test was asserting the
+        // opposite of the behaviour the inbox was built for.
+        olderAt.Should().BeLessThan(newerAt);
     }
 
     [Fact]
@@ -77,7 +78,7 @@ public sealed class LeadReadingTests(LeadFixture fixture)
 
         var owner = await _fixture.ClientAsAsync(LeadFixture.OwnerEmail);
 
-        var byDefault = await owner.GetFromJsonAsync<List<LeadArrange.LeadRow>>("/api/v1/leads");
+        var byDefault = await owner.GetFromJsonAsync<List<LeadArrange.LeadRow>>($"/api/v1/leads?search={nonce}");
         byDefault!.Should().NotContain(l => l.Id == id);
 
         var asked = await owner.GetFromJsonAsync<List<LeadArrange.LeadRow>>("/api/v1/leads?stage=spam");
@@ -137,7 +138,7 @@ public sealed class LeadReadingTests(LeadFixture fixture)
             .StatusCode.Should().Be(HttpStatusCode.Accepted);
 
         var owner = await _fixture.ClientAsAsync(LeadFixture.OwnerEmail);
-        var list = await owner.GetFromJsonAsync<List<LeadArrange.LeadRow>>("/api/v1/leads");
+        var list = await owner.GetFromJsonAsync<List<LeadArrange.LeadRow>>($"/api/v1/leads?search={nonce}");
         var id = list!.Single(l => l.FullName == $"PROBE-{nonce}").Id;
 
         var detail = await owner.GetFromJsonAsync<LeadArrange.LeadDetailRow>($"/api/v1/leads/{id}");
@@ -169,7 +170,7 @@ public sealed class LeadReadingTests(LeadFixture fixture)
             .StatusCode.Should().Be(HttpStatusCode.Accepted);
 
         var owner = await _fixture.ClientAsAsync(LeadFixture.OwnerEmail);
-        var list = await owner.GetFromJsonAsync<List<LeadArrange.LeadRow>>("/api/v1/leads");
+        var list = await owner.GetFromJsonAsync<List<LeadArrange.LeadRow>>($"/api/v1/leads?search={nonce}");
         var id = list!.Single(l => l.FullName == $"PROBE-{nonce}").Id;
 
         var detail = await owner.GetFromJsonAsync<LeadArrange.LeadDetailRow>($"/api/v1/leads/{id}");
@@ -232,5 +233,21 @@ public sealed class LeadReadingTests(LeadFixture fixture)
         db.Leads.Add(lead);
         await db.SaveChangesAsync();
         return lead.Id;
+    }
+
+    /// <summary>
+    /// Moves a lead's arrival and its deadline into the past. The audit stamp overwrites
+    /// CreatedAtUtc on insert, which is right for the application and wrong for a test that needs
+    /// an enquiry from three days ago.
+    /// </summary>
+    private async Task BackdateAsync(Guid id, DateTime createdAtUtc)
+    {
+        using var scope = _fixture.NewScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        await db.Leads.Where(l => l.Id == id)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(l => l.CreatedAtUtc, createdAtUtc)
+                .SetProperty(l => l.SlaDueAtUtc, createdAtUtc.AddHours(9)));
     }
 }

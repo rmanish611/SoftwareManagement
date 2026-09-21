@@ -110,6 +110,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IClock clock)
 
     public DbSet<NumberSequence> NumberSequences => Set<NumberSequence>();
 
+    public DbSet<Tenant> Tenants => Set<Tenant>();
+
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+
+    public DbSet<SubscriptionEvent> SubscriptionEvents => Set<SubscriptionEvent>();
+
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+
+    public DbSet<Payment> Payments => Set<Payment>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

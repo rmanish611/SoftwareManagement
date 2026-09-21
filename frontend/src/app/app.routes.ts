@@ -102,6 +102,21 @@ export const routes: Routes = [
         loadComponent: () => import('./admin/quotes/quote-editor').then((m) => m.QuoteEditor),
         title: 'Quote',
       },
+      {
+        path: 'subscriptions',
+        loadComponent: () => import('./admin/billing/subscription-list').then((m) => m.SubscriptionList),
+        title: 'Subscriptions',
+      },
+      {
+        path: 'invoices',
+        loadComponent: () => import('./admin/billing/invoice-list').then((m) => m.InvoiceList),
+        title: 'Invoices',
+      },
+      {
+        path: 'invoices/:id',
+        loadComponent: () => import('./admin/billing/invoice-detail').then((m) => m.InvoiceDetail),
+        title: 'Invoice',
+      },
     ],
   },
   { path: '**', redirectTo: '' },
